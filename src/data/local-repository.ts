@@ -96,6 +96,24 @@ export class LocalRepository implements IRepository {
     return newCard;
   }
 
+  async createCards(
+    cards: Omit<Card, 'id' | 'createdAt' | 'updatedAt'>[]
+  ): Promise<Card[]> {
+    const now = new Date();
+    const defaults = createDefaultCardValues();
+
+    const newCards = cards.map((card) => ({
+      ...defaults,
+      ...card,
+      id: generateId(),
+      createdAt: now,
+      updatedAt: now,
+    }));
+
+    await db.cards.bulkAdd(newCards);
+    return newCards;
+  }
+
   async updateCard(
     id: string,
     updates: Partial<Omit<Card, 'id'>>

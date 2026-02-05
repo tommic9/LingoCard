@@ -7,7 +7,7 @@ import type { Card, StudySession } from '../types';
 import { repository } from '../data/local-repository';
 import { calculateSM2 } from '../algorithms/sm2';
 
-export function useStudySession(deckId: string | undefined) {
+export function useStudySession() {
   const [session, setSession] = useState<StudySession | null>(null);
   const [currentCard, setCurrentCard] = useState<Card | null>(null);
   const [isFlipped, setIsFlipped] = useState(false);
@@ -16,17 +16,12 @@ export function useStudySession(deckId: string | undefined) {
 
   // Initialize study session
   const startSession = useCallback(async () => {
-    if (!deckId) {
-      setLoading(false);
-      return;
-    }
-
     try {
       setLoading(true);
       setError(null);
 
-      // Get due cards for this deck
-      const dueCards = await repository.getDueCards(deckId);
+      // Get all due cards (no deck filtering)
+      const dueCards = await repository.getAllDueCards();
 
       if (dueCards.length === 0) {
         setError('No cards due for review');
@@ -38,7 +33,7 @@ export function useStudySession(deckId: string | undefined) {
       const shuffled = shuffleArray([...dueCards]);
 
       const newSession: StudySession = {
-        deckId,
+        deckId: 'all', // No longer using specific deck IDs
         cards: shuffled,
         currentIndex: 0,
         reviewedCount: 0,
@@ -54,7 +49,7 @@ export function useStudySession(deckId: string | undefined) {
     } finally {
       setLoading(false);
     }
-  }, [deckId]);
+  }, []);
 
   // Initialize on mount
   useEffect(() => {

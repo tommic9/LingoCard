@@ -6,7 +6,6 @@ import { Link } from 'react-router-dom';
 import { useMemo } from 'react';
 
 interface StudyCompleteProps {
-  deckId: string;
   totalCards: number;
   reviewedCards: number;
   startedAt: Date;
@@ -14,7 +13,6 @@ interface StudyCompleteProps {
 }
 
 export function StudyComplete({
-  deckId,
   totalCards,
   reviewedCards,
   startedAt,
@@ -98,17 +96,10 @@ export function StudyComplete({
 
         {/* Action buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link
-            to={`/deck/${deckId}`}
-            className="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition"
-          >
-            Back to Deck
-          </Link>
-
           {onRestart && (
             <button
               onClick={onRestart}
-              className="px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition"
+              className="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition"
             >
               Study Again
             </button>
@@ -118,7 +109,7 @@ export function StudyComplete({
             to="/"
             className="px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition"
           >
-            Home
+            Back to Home
           </Link>
         </div>
 

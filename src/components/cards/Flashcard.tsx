@@ -2,7 +2,6 @@
  * Flashcard component with flip animation
  */
 
-import { useState } from 'react';
 import type { Card } from '../../types';
 
 interface FlashcardProps {
@@ -60,9 +59,6 @@ export function Flashcard({ card, isFlipped, onFlip, showExample = true }: Flash
             </div>
             {showExample && card.example && (
               <div className="mt-4 p-4 bg-white/10 rounded-lg backdrop-blur-sm">
-                <div className="text-xs text-primary-100 uppercase tracking-wide mb-2">
-                  Example
-                </div>
                 <div className="text-sm text-white italic">
                   "{card.example}"
                 </div>

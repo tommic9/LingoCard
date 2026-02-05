@@ -65,4 +65,54 @@
   .animate-fadeIn {
     animation: fadeIn 0.3s ease-out;
   }
+
+  /* Swipe animation utilities */
+  .swipe-card {
+    touch-action: pan-y;
+    cursor: grab;
+    will-change: transform;
+    transform: translateZ(0); /* GPU acceleration */
+  }
+
+  .swipe-card-dragging {
+    cursor: grabbing;
+    user-select: none;
+  }
+
+  @keyframes swipeExitRight {
+    to {
+      transform: translateX(150%) rotate(25deg);
+      opacity: 0;
+    }
+  }
+
+  @keyframes swipeExitLeft {
+    to {
+      transform: translateX(-150%) rotate(-25deg);
+      opacity: 0;
+    }
+  }
+
+  @keyframes slideInFromBelow {
+    from {
+      transform: translateY(30px) scale(0.95);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+  }
+
+  .swipe-card-exit-right {
+    animation: swipeExitRight 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  .swipe-card-exit-left {
+    animation: swipeExitLeft 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  .card-enter {
+    animation: slideInFromBelow 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
 }

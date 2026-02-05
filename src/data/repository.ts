@@ -18,6 +18,7 @@ export interface IRepository {
   getCards(deckId: string): Promise<Card[]>;
   getCard(id: string): Promise<Card | undefined>;
   createCard(card: Omit<Card, 'id' | 'createdAt' | 'updatedAt'>): Promise<Card>;
+  createCards(cards: Omit<Card, 'id' | 'createdAt' | 'updatedAt'>[]): Promise<Card[]>;
   updateCard(id: string, updates: Partial<Omit<Card, 'id'>>): Promise<void>;
   deleteCard(id: string): Promise<void>;
   getDueCards(deckId: string): Promise<Card[]>;

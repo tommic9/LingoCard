@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build:*)",
+      "Bash(ls:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nImplement Phase 3 - Card Management & CSV Import\n\nFeatures implemented:\n- Manual card creation form with validation and auto-translation \\(EN→PL\\)\n- CSV bulk import with file upload, drag-and-drop, and preview\n- Duplicate detection with exact matching \\(case-insensitive, normalized\\)\n- User deck management \\(\"My Cards\" auto-created on first card\\)\n- Progress tracking during bulk import\n- Dark mode support throughout\n\nNew files:\n- src/constants/user-deck.ts - User deck configuration\n- src/utils/translator.ts - LibreTranslate API integration with LRU cache\n- src/utils/duplicate-detector.ts - Duplicate detection utilities\n- src/hooks/useCardManagement.ts - Card CRUD and state management\n- src/components/cards/CardForm.tsx - Manual entry form\n- src/components/cards/CsvImport.tsx - CSV import UI with file upload\n- src/components/cards/CsvPreview.tsx - Import preview table\n- src/components/cards/DuplicateWarning.tsx - Duplicate alert component\n- src/pages/AddCardPage.tsx - Tabbed page with both entry methods\n\nModified files:\n- src/data/repository.ts - Added createCards interface method\n- src/data/local-repository.ts - Implemented batch card creation\n\nCo-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+    ]
+  }
+}

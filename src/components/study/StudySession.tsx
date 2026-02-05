@@ -2,8 +2,10 @@
  * Study Session component - main study interface
  */
 
+import { useState } from 'react';
 import { Flashcard } from '../cards/Flashcard';
-import { RatingButtons } from './RatingButtons';
+import { SwipeableCard } from '../cards/SwipeableCard';
+import { SwipeRating } from './SwipeRating';
 import type { Card } from '../../types';
 
 interface StudySessionProps {
@@ -27,6 +29,10 @@ export function StudySession({
   onRate,
   progress,
 }: StudySessionProps) {
+  // State for swipe feedback
+  const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
+  const [swipeProgress, setSwipeProgress] = useState(0);
+
   return (
     <div className="space-y-6">
       {/* Progress bar */}
@@ -51,19 +57,32 @@ export function StudySession({
         </div>
       </div>
 
-      {/* Flashcard */}
-      <Flashcard
-        card={currentCard}
-        isFlipped={isFlipped}
-        onFlip={onFlip}
-      />
+      {/* Flashcard wrapped with SwipeableCard */}
+      <SwipeableCard
+        key={currentCard.id}
+        onSwipeLeft={() => onRate(0)}
+        onSwipeRight={() => onRate(4)}
+        disabled={!isFlipped}
+        onSwipeProgress={(direction, progress) => {
+          setSwipeDirection(direction);
+          setSwipeProgress(progress);
+        }}
+      >
+        <Flashcard
+          card={currentCard}
+          isFlipped={isFlipped}
+          onFlip={onFlip}
+        />
+      </SwipeableCard>
 
-      {/* Rating buttons - only show when card is flipped */}
+      {/* Rating system - only show when card is flipped */}
       {isFlipped && (
         <div className="animate-fadeIn">
-          <RatingButtons
+          <SwipeRating
             card={currentCard}
             onRate={onRate}
+            swipeDirection={swipeDirection}
+            swipeProgress={swipeProgress}
           />
         </div>
       )}

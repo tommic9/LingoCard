@@ -2,14 +2,14 @@
  * Study Page - Flashcard study session
  */
 
-import { useParams, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useStudySession } from '../hooks/useStudySession';
 import { StudySession } from '../components/study/StudySession';
 import { StudyComplete } from '../components/study/StudyComplete';
 
 export function StudyPage() {
-  const { deckId } = useParams<{ deckId: string }>();
   const {
+    session,
     currentCard,
     isFlipped,
     loading,
@@ -19,7 +19,7 @@ export function StudyPage() {
     flipCard,
     rateCard,
     startSession,
-  } = useStudySession(deckId);
+  } = useStudySession();
 
   // Loading state
   if (loading) {
@@ -47,43 +47,23 @@ export function StudyPage() {
               : error}
           </p>
         </div>
-        {deckId && (
-          <Link
-            to={`/deck/${deckId}`}
-            className="inline-block px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
-          >
-            Back to Deck
-          </Link>
-        )}
-      </div>
-    );
-  }
-
-  // No deck ID
-  if (!deckId) {
-    return (
-      <div className="max-w-2xl mx-auto text-center py-12">
-        <p className="text-gray-600 dark:text-gray-400 mb-4">
-          No deck selected for study
-        </p>
         <Link
           to="/"
           className="inline-block px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
         >
-          Go to Home
+          Back to Home
         </Link>
       </div>
     );
   }
 
   // Session complete
-  if (isComplete && progress) {
+  if (isComplete && progress && session) {
     return (
       <StudyComplete
-        deckId={deckId}
         totalCards={progress.total}
         reviewedCards={progress.reviewed}
-        startedAt={new Date(Date.now() - progress.reviewed * 5000)} // Approximate
+        startedAt={session.startedAt}
         onRestart={startSession}
       />
     );
@@ -97,7 +77,7 @@ export function StudyPage() {
           currentCard={currentCard}
           isFlipped={isFlipped}
           onFlip={flipCard}
-          onRate={rateCard}
+          onRate={(rating: 0 | 2 | 4 | 5) => rateCard(rating)}
           progress={progress}
         />
       </div>
