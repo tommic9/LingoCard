@@ -12,7 +12,7 @@ interface StudySessionProps {
   currentCard: Card;
   isFlipped: boolean;
   onFlip: () => void;
-  onRate: (rating: 0 | 2 | 4 | 5) => void;
+  onRate: (rating: 0 | 4) => void;
   progress: {
     current: number;
     total: number;
@@ -34,26 +34,33 @@ export function StudySession({
   const [swipeProgress, setSwipeProgress] = useState(0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Progress bar */}
-      <div className="w-full max-w-2xl mx-auto">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+      <div className="w-full max-w-2xl mx-auto px-2">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-base font-bold text-gray-800 dark:text-gray-200">
             Progress
           </span>
-          <span className="text-sm text-gray-600 dark:text-gray-400">
+          <span className="text-base font-bold text-primary-600 dark:text-primary-400">
             {progress.current} / {progress.total}
           </span>
         </div>
-        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+        <div className="relative w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 shadow-inner overflow-hidden">
           <div
-            className="bg-primary-600 dark:bg-primary-500 h-2.5 rounded-full transition-all duration-300"
+            className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary-500 via-primary-600 to-primary-700 dark:from-primary-600 dark:via-primary-700 dark:to-primary-800 rounded-full transition-all duration-500 ease-out shadow-lg"
             style={{ width: `${progress.percentage}%` }}
-          />
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-white/30 to-transparent animate-pulse" />
+          </div>
+          <div className="absolute inset-0 rounded-full ring-1 ring-inset ring-black/10 dark:ring-white/10" />
         </div>
-        <div className="flex items-center justify-between mt-2 text-xs text-gray-500 dark:text-gray-500">
-          <span>Reviewed: {progress.reviewed}</span>
-          <span>Remaining: {progress.remaining}</span>
+        <div className="flex items-center justify-between mt-3 text-sm font-medium">
+          <span className="text-green-600 dark:text-green-400">
+            Reviewed: {progress.reviewed}
+          </span>
+          <span className="text-orange-600 dark:text-orange-400">
+            Remaining: {progress.remaining}
+          </span>
         </div>
       </div>
 
@@ -89,10 +96,12 @@ export function StudySession({
 
       {/* Instructions when card is not flipped */}
       {!isFlipped && (
-        <div className="text-center">
-          <p className="text-gray-600 dark:text-gray-400 text-sm">
-            Think of the answer, then tap the card to reveal
-          </p>
+        <div className="text-center animate-fadeIn">
+          <div className="inline-block bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-700 px-6 py-3 rounded-full shadow-md">
+            <p className="text-gray-700 dark:text-gray-300 text-base font-medium">
+              Think of the answer, then tap the card to reveal
+            </p>
+          </div>
         </div>
       )}
     </div>

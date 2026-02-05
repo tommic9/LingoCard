@@ -63,7 +63,7 @@ export function useStudySession() {
 
   // Rate the current card and move to next
   const rateCard = useCallback(
-    async (rating: 0 | 1 | 2 | 3 | 4 | 5) => {
+    async (rating: 0 | 4) => {
       if (!session || !currentCard) return;
 
       try {

@@ -77,7 +77,7 @@ export function StudyPage() {
           currentCard={currentCard}
           isFlipped={isFlipped}
           onFlip={flipCard}
-          onRate={(rating: 0 | 2 | 4 | 5) => rateCard(rating)}
+          onRate={(rating: 0 | 4) => rateCard(rating)}
           progress={progress}
         />
       </div>

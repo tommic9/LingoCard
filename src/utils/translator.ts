@@ -1,8 +1,10 @@
 /**
  * Translation utility for English to Polish
- * Uses LibreTranslate API with local caching
+ * Uses MyMemory API (primary) with LibreTranslate fallback
+ * Includes local LRU caching (max 100 entries)
  */
 
+const MYMEMORY_API = 'https://api.mymemory.translated.net/get';
 const LIBRETRANSLATE_API = 'https://libretranslate.com/translate';
 const CACHE_MAX_SIZE = 100;
 const TIMEOUT_MS = 5000;
@@ -15,7 +17,7 @@ interface CacheEntry {
 
 interface TranslateResult {
   translatedText: string;
-  source: 'libretranslate' | 'mock';
+  source: 'mymemory' | 'libretranslate' | 'cache' | 'mock';
 }
 
 // LRU cache for translations
@@ -54,6 +56,7 @@ let translationCache = new TranslationCache();
 
 /**
  * Translate English text to Polish
+ * Tries: Cache → Mock Mode → MyMemory API → LibreTranslate API → Error
  */
 export async function translateEnglishToPolish(
   text: string
@@ -67,7 +70,7 @@ export async function translateEnglishToPolish(
   if (cached) {
     return {
       translatedText: cached,
-      source: 'libretranslate',
+      source: 'cache',
     };
   }
 
@@ -76,6 +79,21 @@ export async function translateEnglishToPolish(
     return getMockTranslation(text);
   }
 
+  // Try MyMemory API (primary - free, 50k chars/day)
+  try {
+    const result = await translateViaMyMemory(text);
+    if (result) {
+      translationCache.set(text, result);
+      return {
+        translatedText: result,
+        source: 'mymemory',
+      };
+    }
+  } catch (error) {
+    console.warn('MyMemory translation failed, trying LibreTranslate fallback:', error);
+  }
+
+  // Fallback to LibreTranslate
   try {
     const result = await translateViaLibreTranslate(text);
     if (result) {
@@ -86,10 +104,62 @@ export async function translateEnglishToPolish(
       };
     }
   } catch (error) {
-    console.error('Translation error:', error);
+    console.error('LibreTranslate translation also failed:', error);
   }
 
   return { error: 'Translation failed. Please try again or enter manually.' };
+}
+
+/**
+ * Call MyMemory API with timeout
+ * Free translation service, 50k chars/day limit (without email)
+ */
+async function translateViaMyMemory(text: string): Promise<string | null> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+  try {
+    const params = new URLSearchParams({
+      q: text,
+      langpair: 'en|pl',
+    });
+
+    const response = await fetch(`${MYMEMORY_API}?${params}`, {
+      method: 'GET',
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.statusText}`);
+    }
+
+    interface MyMemoryResponse {
+      responseStatus: number;
+      quotaFinished?: boolean;
+      responseData?: {
+        translatedText?: string;
+      };
+    }
+
+    const data = await response.json() as MyMemoryResponse;
+
+    if (data.quotaFinished) {
+      throw new Error('MyMemory daily quota exceeded');
+    }
+
+    if (data.responseStatus !== 200) {
+      throw new Error(`MyMemory error: status ${data.responseStatus}`);
+    }
+
+    return data.responseData?.translatedText || null;
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('Translation timeout');
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 /**

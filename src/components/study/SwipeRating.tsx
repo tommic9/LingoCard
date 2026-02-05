@@ -1,5 +1,6 @@
 /**
  * SwipeRating - Rating buttons with swipe feedback
+ * Updated for 2-button system: left swipe = Don't Know, right swipe = Know
  */
 
 import { RatingButtons } from './RatingButtons';
@@ -7,7 +8,7 @@ import type { Card } from '../../types';
 
 interface SwipeRatingProps {
   card: Card;
-  onRate: (rating: 0 | 2 | 4 | 5) => void;
+  onRate: (rating: 0 | 4) => void;
   swipeDirection?: 'left' | 'right' | null;
   swipeProgress?: number;
 }
@@ -24,7 +25,7 @@ export function SwipeRating({
       {swipeProgress > 0 && swipeDirection && (
         <div className="mb-4 text-center">
           <div className="inline-block px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-full text-sm text-gray-600 dark:text-gray-300">
-            {swipeDirection === 'left' ? '← Swipe left for "Again"' : 'Swipe right for "Good" →'}
+            {swipeDirection === 'left' ? "← Swipe left for \"Don't Know\"" : 'Swipe right for "Know" →'}
           </div>
         </div>
       )}
