@@ -23,8 +23,12 @@ export function SwipeRating({
     <div className="w-full max-w-2xl mx-auto px-4">
       {/* Swipe hint */}
       {swipeProgress > 0 && swipeDirection && (
-        <div className="mb-4 text-center">
-          <div className="inline-block px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-full text-sm text-gray-600 dark:text-gray-300">
+        <div className="mb-5 text-center animate-fadeIn">
+          <div className={`inline-block px-5 py-2.5 backdrop-blur-md rounded-full text-sm font-semibold shadow-lg border ${
+            swipeDirection === 'left'
+              ? 'bg-red-100/80 dark:bg-red-900/50 text-red-700 dark:text-red-300 border-red-200 dark:border-red-700'
+              : 'bg-green-100/80 dark:bg-green-900/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-700'
+          }`}>
             {swipeDirection === 'left' ? "← Swipe left for \"Don't Know\"" : 'Swipe right for "Know" →'}
           </div>
         </div>

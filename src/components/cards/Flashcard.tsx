@@ -29,14 +29,15 @@ export function Flashcard({ card, isFlipped, onFlip, showExample = true }: Flash
           className="absolute inset-0 w-full h-full backface-hidden"
           style={{ backfaceVisibility: 'hidden' }}
         >
-          <div className="flex flex-col items-center justify-center h-full bg-white dark:bg-gray-800 rounded-2xl shadow-xl border-4 border-primary-500 p-8">
-            <div className="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-4">
+          <div className="relative flex flex-col items-center justify-center h-full bg-gradient-to-br from-white via-gray-50 to-white dark:from-gray-800 dark:via-gray-850 dark:to-gray-800 rounded-3xl shadow-2xl border-2 border-primary-400 dark:border-primary-600 p-8 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary-50/50 to-transparent dark:from-primary-950/30 dark:to-transparent" />
+            <div className="relative text-xs font-bold text-primary-600 dark:text-primary-400 uppercase tracking-widest mb-6 px-4 py-2 bg-primary-100 dark:bg-primary-900/50 rounded-full">
               Question
             </div>
-            <div className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white text-center">
+            <div className="relative text-3xl md:text-5xl font-extrabold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-white dark:via-gray-100 dark:to-white bg-clip-text text-transparent text-center leading-tight px-4">
               {card.front}
             </div>
-            <div className="mt-8 text-sm text-gray-500 dark:text-gray-400">
+            <div className="relative mt-10 text-sm font-medium text-gray-500 dark:text-gray-400 animate-pulse">
               Tap to reveal
             </div>
           </div>
@@ -50,21 +51,22 @@ export function Flashcard({ card, isFlipped, onFlip, showExample = true }: Flash
             transform: 'rotateY(180deg)',
           }}
         >
-          <div className="flex flex-col items-center justify-center h-full bg-gradient-to-br from-primary-600 to-primary-700 dark:from-primary-700 dark:to-primary-800 rounded-2xl shadow-xl border-4 border-primary-400 p-8">
-            <div className="text-sm text-primary-100 uppercase tracking-wide mb-4">
+          <div className="relative flex flex-col items-center justify-center h-full bg-gradient-to-br from-primary-600 via-primary-700 to-primary-800 dark:from-primary-700 dark:via-primary-800 dark:to-primary-900 rounded-3xl shadow-2xl border-2 border-primary-400 dark:border-primary-500 p-8 overflow-hidden">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(255,255,255,0.1),transparent)]" />
+            <div className="relative text-xs font-bold text-primary-100 uppercase tracking-widest mb-6 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full">
               Answer
             </div>
-            <div className="text-3xl md:text-4xl font-bold text-white text-center mb-6">
+            <div className="relative text-3xl md:text-5xl font-extrabold text-white text-center mb-6 leading-tight px-4 drop-shadow-lg">
               {card.back}
             </div>
             {showExample && card.example && (
-              <div className="mt-4 p-4 bg-white/10 rounded-lg backdrop-blur-sm">
-                <div className="text-sm text-white italic">
+              <div className="relative mt-6 p-5 bg-white/15 backdrop-blur-md rounded-2xl border border-white/20 shadow-xl max-w-lg">
+                <div className="text-base text-white/95 italic leading-relaxed">
                   "{card.example}"
                 </div>
               </div>
             )}
-            <div className="mt-8 text-sm text-primary-100">
+            <div className="relative mt-10 text-sm font-medium text-primary-100 animate-pulse">
               Tap to flip back
             </div>
           </div>

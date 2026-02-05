@@ -15,23 +15,47 @@ function NavItem({ to, icon, label }: NavItemProps) {
     <NavLink
       to={to}
       className={({ isActive }) =>
-        `flex flex-col items-center justify-center flex-1 py-2 px-3 transition ${
+        `relative flex flex-col items-center justify-center flex-1 py-3 px-3 transition-all duration-300 ${
           isActive
             ? 'text-primary-600 dark:text-primary-400'
-            : 'text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400'
+            : 'text-gray-500 dark:text-gray-500 hover:text-primary-600 dark:hover:text-primary-400'
         }`
       }
     >
-      <div className="w-6 h-6 mb-1">{icon}</div>
-      <span className="text-xs font-medium">{label}</span>
+      {({ isActive }) => (
+        <>
+          {/* Active indicator */}
+          {isActive && (
+            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-12 h-1 bg-gradient-to-r from-primary-500 via-primary-600 to-primary-500 rounded-b-full shadow-lg" />
+          )}
+
+          {/* Icon wrapper */}
+          <div
+            className={`w-7 h-7 mb-1 transition-all duration-300 ${
+              isActive ? 'transform scale-110' : 'hover:scale-105'
+            }`}
+          >
+            {icon}
+          </div>
+
+          {/* Label */}
+          <span
+            className={`text-xs font-semibold transition-all duration-300 ${
+              isActive ? 'opacity-100' : 'opacity-75'
+            }`}
+          >
+            {label}
+          </span>
+        </>
+      )}
     </NavLink>
   );
 }
 
 export function BottomNav() {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-lg md:hidden z-50">
-      <div className="flex items-center justify-around">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur-lg border-t border-gray-200 dark:border-gray-700 shadow-2xl md:hidden z-50">
+      <div className="flex items-center justify-around h-16">
         <NavItem
           to="/"
           label="Home"

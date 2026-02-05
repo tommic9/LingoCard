@@ -120,14 +120,17 @@ export function SwipeableCard({
         {/* Color overlay during swipe */}
         {isDragging && dragProgress > 0 && (
           <div
-            className={`absolute inset-0 rounded-2xl pointer-events-none z-10 flex items-center justify-center transition-opacity ${
+            className={`absolute inset-0 rounded-3xl pointer-events-none z-10 flex items-center justify-center transition-opacity ${
               direction === 'left'
-                ? 'bg-red-500/20'
-                : 'bg-green-500/20'
+                ? 'bg-gradient-to-br from-red-500/30 to-red-600/30'
+                : 'bg-gradient-to-br from-green-500/30 to-emerald-600/30'
             }`}
             style={{ opacity: dragProgress }}
           >
-            <div className="text-4xl font-bold text-white drop-shadow-lg">
+            <div
+              className="text-6xl font-bold text-white drop-shadow-2xl transform transition-transform duration-200"
+              style={{ scale: 0.8 + dragProgress * 0.4 }}
+            >
               {direction === 'left' ? '❌' : '✓'}
             </div>
           </div>
@@ -140,10 +143,14 @@ export function SwipeableCard({
       {/* Swipe hint text during drag */}
       {isDragging && dragProgress > 0.3 && (
         <div
-          className="absolute inset-0 rounded-2xl pointer-events-none z-20 flex items-end justify-center pb-6"
+          className="absolute inset-0 rounded-3xl pointer-events-none z-20 flex items-end justify-center pb-8"
           style={{ opacity: dragProgress }}
         >
-          <div className="text-lg font-bold text-white drop-shadow-lg">
+          <div className={`px-6 py-3 rounded-full text-lg font-bold text-white backdrop-blur-sm shadow-2xl ${
+            direction === 'left'
+              ? 'bg-red-600/90'
+              : 'bg-green-600/90'
+          }`}>
             {direction === 'left' ? "Don't Know" : 'Know'}
           </div>
         </div>
