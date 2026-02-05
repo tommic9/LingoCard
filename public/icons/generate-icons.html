@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate Icons</title>
+</head>
+<body>
+    <canvas id="canvas192" width="192" height="192"></canvas>
+    <canvas id="canvas512" width="512" height="512"></canvas>
+    <script>
+        function drawIcon(canvas) {
+            const ctx = canvas.getContext('2d');
+            const size = canvas.width;
+
+            // Background
+            ctx.fillStyle = '#4f46e5';
+            ctx.fillRect(0, 0, size, size);
+
+            // Card icon
+            ctx.fillStyle = '#ffffff';
+            const margin = size * 0.2;
+            const cardWidth = size - (margin * 2);
+            const cardHeight = cardWidth * 0.7;
+            const x = margin;
+            const y = (size - cardHeight) / 2;
+            const radius = size * 0.05;
+
+            // Rounded rectangle
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + cardWidth - radius, y);
+            ctx.quadraticCurveTo(x + cardWidth, y, x + cardWidth, y + radius);
+            ctx.lineTo(x + cardWidth, y + cardHeight - radius);
+            ctx.quadraticCurveTo(x + cardWidth, y + cardHeight, x + cardWidth - radius, y + cardHeight);
+            ctx.lineTo(x + radius, y + cardHeight);
+            ctx.quadraticCurveTo(x, y + cardHeight, x, y + cardHeight - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+            ctx.fill();
+
+            // Lines on card
+            ctx.fillStyle = '#4f46e5';
+            const lineMargin = size * 0.35;
+            const lineHeight = size * 0.02;
+            const lineSpacing = size * 0.08;
+
+            ctx.fillRect(lineMargin, y + cardHeight * 0.3, cardWidth - (lineMargin - x) * 2, lineHeight);
+            ctx.fillRect(lineMargin, y + cardHeight * 0.3 + lineSpacing, cardWidth - (lineMargin - x) * 2, lineHeight);
+            ctx.fillRect(lineMargin, y + cardHeight * 0.3 + lineSpacing * 2, cardWidth * 0.6, lineHeight);
+        }
+
+        drawIcon(document.getElementById('canvas192'));
+        drawIcon(document.getElementById('canvas512'));
+
+        // Download links
+        setTimeout(() => {
+            const canvas192 = document.getElementById('canvas192');
+            const canvas512 = document.getElementById('canvas512');
+
+            canvas192.toBlob(blob => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'icon-192x192.png';
+                a.click();
+            });
+
+            setTimeout(() => {
+                canvas512.toBlob(blob => {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'icon-512x512.png';
+                    a.click();
+                });
+            }, 500);
+        }, 100);
+    </script>
+</body>
+</html>
