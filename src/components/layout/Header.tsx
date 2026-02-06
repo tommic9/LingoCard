@@ -8,7 +8,7 @@ import { HeaderThemeToggle } from './HeaderThemeToggle';
 export function Header() {
   return (
     <header className="bg-primary-600 text-white shadow-lg">
-      <div className="container mx-auto px-4 py-4">
+      <div className="w-full max-w-4xl mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <Link to="/" className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
