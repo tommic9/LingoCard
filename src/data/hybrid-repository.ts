@@ -101,7 +101,13 @@ export class HybridRepository implements IRepository {
   }
 
   async clearAllData(): Promise<void> {
-    return this.repo.clearAllData();
+    // Always clear local data first
+    await this.local.clearAllData();
+
+    // If authenticated, also clear remote data
+    if (this.isAuthenticated) {
+      await this.supabase.clearAllData();
+    }
   }
 
   async exportData(): Promise<{ decks: Deck[]; cards: Card[]; reviewLogs: ReviewLog[] }> {
