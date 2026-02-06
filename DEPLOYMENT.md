@@ -27,12 +27,16 @@ git push -u origin main
 
 In Netlify dashboard:
 1. Go to **Site settings** → **Environment variables**
-2. Add these variables:
+2. Add these variables (get values from your Supabase project):
 
 ```
-VITE_SUPABASE_URL = https://qhnyqajcijojpuufxyrn.supabase.co
-VITE_SUPABASE_ANON_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFobnlxYWpjaWpvanB1dWZ4eXJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAzMTQyOTYsImV4cCI6MjA4NTg5MDI5Nn0.Eu2KX_yRkFqROZLUXg3Z012AG9eJk3Vk1EFXD_Q2vOw
+VITE_SUPABASE_URL = <your-supabase-project-url>
+VITE_SUPABASE_ANON_KEY = <your-supabase-anon-key>
 ```
+
+**Where to find these values:**
+- Go to your Supabase Dashboard → Project Settings → API
+- Copy "Project URL" and "anon public" key
 
 ### Step 4: Deploy!
 
