@@ -14,7 +14,6 @@ dist-ssr
 
 # Claude credentials
 .claude/credentiaals/
-.claude/agents/
 
 # Debug files
 check-db.html

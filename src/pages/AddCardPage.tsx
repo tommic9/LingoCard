@@ -2,15 +2,43 @@
  * Add Card Page - Create and import cards
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { CardForm } from '../components/cards/CardForm';
 import { CsvImport } from '../components/cards/CsvImport';
 
 type TabType = 'manual' | 'csv';
 
 export function AddCardPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<TabType>('manual');
   const [message, setMessage] = useState('');
+
+  // Read initial values from query params (from extension)
+  const initialFront = searchParams.get('front') || undefined;
+  const initialBack = searchParams.get('back') || undefined;
+  const fromExtension = searchParams.get('source') === 'extension';
+
+  // Debug: Log query params
+  console.log('[AddCardPage] Query params:', {
+    front: initialFront,
+    back: initialBack,
+    source: fromExtension,
+    allParams: Object.fromEntries(searchParams.entries())
+  });
+
+  // Clear query params after reading (clean URL)
+  useEffect(() => {
+    if (fromExtension && (initialFront || initialBack)) {
+      // Show welcome message for extension users
+      setMessage('✨ Word from extension - edit and add!');
+      setTimeout(() => {
+        setMessage('');
+        // Clear query params
+        setSearchParams({});
+      }, 3000);
+    }
+  }, [fromExtension, initialFront, initialBack, setSearchParams]);
 
   const handleCardCreated = () => {
     setMessage('Card added successfully!');
@@ -70,7 +98,13 @@ export function AddCardPage() {
       {/* Tab Content */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
         {activeTab === 'manual' && (
-          <CardForm onCardCreated={handleCardCreated} />
+          <CardForm
+            onCardCreated={handleCardCreated}
+            initialValues={{
+              front: initialFront,
+              back: initialBack,
+            }}
+          />
         )}
         {activeTab === 'csv' && (
           <CsvImport onImportComplete={handleImportComplete} />
