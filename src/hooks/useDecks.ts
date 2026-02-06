@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { Deck, DeckStats, DeckWithStats } from '../types';
-import { repository } from '../data/local-repository';
+import { repository } from '../data/hybrid-repository';
 
 export function useDecks() {
   const [decks, setDecks] = useState<Deck[]>([]);

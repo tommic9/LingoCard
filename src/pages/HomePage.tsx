@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { repository } from '../data/local-repository';
+import { repository } from '../data/hybrid-repository';
 
 interface Stats {
   totalCards: number;

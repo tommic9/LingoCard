@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { Card, Deck } from '../types';
-import { repository } from '../data/local-repository';
+import { repository } from '../data/hybrid-repository';
 import { USER_DECK_CONFIG } from '../constants/user-deck';
 import { checkDuplicate, checkDuplicates } from '../utils/duplicate-detector';
 

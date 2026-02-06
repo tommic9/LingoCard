@@ -4,7 +4,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import type { Card, StudySession } from '../types';
-import { repository } from '../data/local-repository';
+import { repository } from '../data/hybrid-repository';
 import { calculateSM2 } from '../algorithms/sm2';
 
 export function useStudySession() {

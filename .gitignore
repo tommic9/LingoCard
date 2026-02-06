@@ -12,6 +12,15 @@ dist
 dist-ssr
 *.local
 
+# Claude credentials
+.claude/credentiaals/
+.claude/agents/
+
+# Debug files
+check-db.html
+clear-db.html
+nul
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

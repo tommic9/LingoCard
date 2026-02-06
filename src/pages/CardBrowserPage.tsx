@@ -5,13 +5,13 @@
 import { useState, useMemo } from 'react';
 import { CardItem } from '../components/cards/CardItem';
 import { EditCardModal } from '../components/cards/EditCardModal';
-import { useCardManagement } from '../hooks/useCardManagement';
+import { useAllCards } from '../hooks/useAllCards';
 import type { Card } from '../types';
 
 type SortOption = 'alphabetical-az' | 'alphabetical-za' | 'newest' | 'oldest' | 'due-date';
 
 export function CardBrowserPage() {
-  const { cards, loading, error, updateCard, deleteCard } = useCardManagement();
+  const { cards, loading, error, updateCard, deleteCard } = useAllCards();
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('alphabetical-az');
   const [editingCard, setEditingCard] = useState<Card | null>(null);
@@ -103,9 +103,9 @@ export function CardBrowserPage() {
     <div className="max-w-6xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">My Cards</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Browse Cards</h1>
         <p className="text-gray-600 dark:text-gray-400">
-          {stats.total} card{stats.total !== 1 ? 's' : ''} •{' '}
+          {stats.total} card{stats.total !== 1 ? 's' : ''} from all decks •{' '}
           <span className={stats.due > 0 ? 'text-orange-600 dark:text-orange-400 font-semibold' : ''}>
             {stats.due} due today
           </span>
@@ -146,6 +146,19 @@ export function CardBrowserPage() {
               ? "Try adjusting your search terms"
               : 'Add your first card to get started!'}
           </p>
+          {!searchQuery && (
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <a
+                href="/add"
+                className="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors"
+              >
+                + Add Cards
+              </a>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Create cards manually or import from CSV
+              </p>
+            </div>
+          )}
         </div>
       )}
 

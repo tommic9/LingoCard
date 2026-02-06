@@ -3,12 +3,30 @@
  */
 
 import { useState } from 'react';
-import { repository } from '../data/local-repository';
+import { useNavigate } from 'react-router-dom';
+import { repository } from '../data/hybrid-repository';
 import { seedDatabase } from '../data/seed-data';
+import { ThemeToggle } from '../components/settings/ThemeToggle';
+import { useAuth } from '../contexts/AuthContext';
 
 export function SettingsPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      setMessage('Signed out successfully!');
+      setTimeout(() => {
+        navigate('/');
+      }, 1000);
+    } catch (error) {
+      console.error('Failed to sign out:', error);
+      setMessage('Error signing out. Please try again.');
+    }
+  };
 
   const handleLoadSeedData = async () => {
     if (
@@ -102,6 +120,57 @@ export function SettingsPage() {
         </div>
       )}
 
+      {/* Account & Sync section */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+          Account & Sync
+        </h2>
+        {user ? (
+          <>
+            <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
+              Signed in as: <span className="font-medium">{user.email}</span>
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={handleSignOut}
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
+              >
+                Sign Out
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">
+              Your data is automatically synced to the cloud
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
+              Sign in to sync your cards across devices
+            </p>
+            <button
+              onClick={() => navigate('/login')}
+              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
+            >
+              Sign In
+            </button>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">
+              Currently using offline mode (local storage only)
+            </p>
+          </>
+        )}
+      </div>
+
+      {/* Theme section */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+          Appearance
+        </h2>
+        <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
+          Choose your preferred theme or match your system settings
+        </p>
+        <ThemeToggle />
+      </div>
+
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow divide-y divide-gray-200 dark:divide-gray-700">
         <div className="p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
@@ -156,7 +225,6 @@ export function SettingsPage() {
           Coming in Future Phases:
         </h2>
         <ul className="space-y-2 text-gray-600 dark:text-gray-400">
-          <li>- Dark/Light theme toggle</li>
           <li>- Language preferences</li>
           <li>- Study reminders</li>
           <li>- Statistics and progress tracking</li>

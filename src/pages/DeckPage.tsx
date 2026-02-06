@@ -5,7 +5,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import type { Deck, Card } from '../types';
-import { repository } from '../data/local-repository';
+import { repository } from '../data/hybrid-repository';
 import { CardList } from '../components/cards/CardList';
 
 export function DeckPage() {

@@ -4,7 +4,7 @@
  */
 
 import type { Card } from '../types';
-import { repository } from '../data/local-repository';
+import { repository } from '../data/hybrid-repository';
 
 /**
  * Normalize text for comparison: lowercase, trim, remove diacritics

@@ -4,6 +4,7 @@
 
 export interface Deck {
   id: string;
+  userId?: string; // Optional for backwards compatibility (local mode)
   name: string;
   description: string;
   isBuiltIn: boolean; // true = built-in deck
@@ -14,6 +15,7 @@ export interface Deck {
 export interface Card {
   id: string;
   deckId: string;
+  userId?: string; // Optional for backwards compatibility (local mode)
   front: string; // English (or question)
   back: string; // Polish (or answer)
   example?: string; // Example sentence
@@ -29,6 +31,7 @@ export interface Card {
 export interface ReviewLog {
   id: string;
   cardId: string;
+  userId?: string; // Optional for backwards compatibility (local mode)
   rating: 0 | 1 | 2 | 3 | 4 | 5; // SM-2 rating
   reviewedAt: Date;
 }
@@ -76,4 +79,34 @@ export interface StudySession {
 
 export interface DeckWithStats extends Deck {
   stats: DeckStats;
+}
+
+/**
+ * Theme types
+ */
+
+export type ThemeMode = 'light' | 'dark' | 'system';
+
+export interface ThemeContextType {
+  theme: ThemeMode;
+  setTheme: (theme: ThemeMode) => void;
+  effectiveTheme: 'light' | 'dark'; // Resolved theme (system -> light/dark)
+}
+
+/**
+ * Authentication types
+ */
+
+export interface User {
+  id: string;
+  email: string;
+  createdAt: Date;
+}
+
+export interface AuthContextType {
+  user: User | null;
+  loading: boolean;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<void>;
+  signOut: () => Promise<void>;
 }
