@@ -2,7 +2,7 @@
  * CardForm component - Manual card entry form
  */
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { Card } from '../../types';
 import { useCardManagement } from '../../hooks/useCardManagement';
 import { translateEnglishToPolish } from '../../utils/translator';
@@ -11,6 +11,7 @@ import { DuplicateWarning } from './DuplicateWarning';
 interface CardFormProps {
   onCardCreated?: (card: Card) => void;
   onCancel?: () => void;
+  initialValues?: Partial<FormData>;
 }
 
 interface FormData {
@@ -19,12 +20,12 @@ interface FormData {
   example?: string;
 }
 
-export function CardForm({ onCardCreated, onCancel }: CardFormProps) {
+export function CardForm({ onCardCreated, onCancel, initialValues }: CardFormProps) {
   const { createCard, checkDuplicateCard } = useCardManagement();
   const [formData, setFormData] = useState<FormData>({
-    front: '',
-    back: '',
-    example: '',
+    front: initialValues?.front || '',
+    back: initialValues?.back || '',
+    example: initialValues?.example || '',
   });
 
   const [loading, setLoading] = useState(false);
@@ -33,6 +34,19 @@ export function CardForm({ onCardCreated, onCancel }: CardFormProps) {
   const [translating, setTranslating] = useState(false);
   const [duplicateCard, setDuplicateCard] = useState<Card | null>(null);
   const [allowDuplicate, setAllowDuplicate] = useState(false);
+
+  // Ref for example textarea (auto-focus when from extension)
+  const exampleRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-focus on example field if initial values are provided
+  useEffect(() => {
+    if (initialValues?.front && initialValues?.back && exampleRef.current) {
+      // Small delay to ensure rendering is complete
+      setTimeout(() => {
+        exampleRef.current?.focus();
+      }, 100);
+    }
+  }, [initialValues]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -248,6 +262,7 @@ export function CardForm({ onCardCreated, onCancel }: CardFormProps) {
             Example (Optional)
           </label>
           <textarea
+            ref={exampleRef}
             id="example"
             name="example"
             value={formData.example}

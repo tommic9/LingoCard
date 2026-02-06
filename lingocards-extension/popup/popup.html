@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LingoCards Helper</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Login Screen -->
+    <div id="login-screen" class="screen">
+      <div class="header">
+        <img src="../icons/icon-48.png" alt="LingoCards" class="logo">
+        <h1>LingoCards</h1>
+      </div>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            placeholder="twoj@email.com"
+            required
+            autocomplete="email"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="password">Hasło</label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            placeholder="••••••••"
+            required
+            autocomplete="current-password"
+          >
+        </div>
+
+        <div id="error-message" class="error-message"></div>
+
+        <button type="submit" id="login-button" class="primary-button">
+          Zaloguj się
+        </button>
+      </form>
+
+      <div class="footer-links">
+        <a href="https://lingocards.netlify.app" target="_blank" class="link">
+          Nie masz konta? Utwórz w aplikacji
+        </a>
+      </div>
+    </div>
+
+    <!-- Dashboard Screen -->
+    <div id="dashboard-screen" class="screen" style="display: none;">
+      <div class="header">
+        <img src="../icons/icon-48.png" alt="LingoCards" class="logo">
+        <h1>LingoCards</h1>
+      </div>
+
+      <div class="user-info">
+        <div class="user-email">
+          <span class="label">Zalogowany jako:</span>
+          <span id="user-email-text" class="value"></span>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat-item">
+          <span class="stat-label">Dodane słówka</span>
+          <span id="cards-count" class="stat-value">0</span>
+        </div>
+      </div>
+
+      <div class="actions">
+        <a href="https://lingocards.netlify.app" target="_blank" class="secondary-button">
+          Otwórz aplikację
+        </a>
+        <button id="logout-button" class="secondary-button">
+          Wyloguj się
+        </button>
+      </div>
+
+      <div class="instructions">
+        <p class="instruction-text">
+          <strong>Jak używać:</strong><br>
+          Zaznacz słowo na dowolnej stronie → kliknij prawym przyciskiem → "Dodaj do LingoCards"
+        </p>
+      </div>
+    </div>
+
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="screen" style="display: none;">
+      <div class="loading-spinner"></div>
+      <p>Ładowanie...</p>
+    </div>
+  </div>
+
+  <!-- Load Supabase locally -->
+  <script src="../lib/supabase.umd.js"></script>
+
+  <!-- Load popup script as module -->
+  <script type="module" src="popup.js"></script>
+</body>
+</html>
