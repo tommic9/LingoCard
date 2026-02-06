@@ -2,8 +2,10 @@
  * Study Page - Flashcard study session
  */
 
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useStudySession } from '../hooks/useStudySession';
+import { useDailyGoal } from '../hooks/useDailyGoal';
 import { StudySession } from '../components/study/StudySession';
 import { StudyComplete } from '../components/study/StudyComplete';
 
@@ -16,13 +18,86 @@ export function StudyPage() {
     error,
     progress,
     isComplete,
+    isGoalLimited,
+    totalDueCount,
     flipCard,
     rateCard,
     startSession,
   } = useStudySession();
 
+  const dailyGoal = useDailyGoal();
+  const [showGoalMetScreen, setShowGoalMetScreen] = useState(false);
+  const [sessionStarted, setSessionStarted] = useState(false);
+
+  // Start session after daily goal is loaded
+  useEffect(() => {
+    if (!dailyGoal.loading && !sessionStarted) {
+      setSessionStarted(true);
+
+      if (dailyGoal.goalMet && dailyGoal.remaining === 0) {
+        // Goal already met, show "goal met" screen
+        setShowGoalMetScreen(true);
+      } else {
+        // Start session with remaining cards as limit
+        startSession({ maxCards: dailyGoal.remaining });
+      }
+    }
+  }, [dailyGoal.loading, sessionStarted, dailyGoal.goalMet, dailyGoal.remaining, startSession]);
+
+  const handleLearnMore = () => {
+    setShowGoalMetScreen(false);
+    startSession({ unlimited: true });
+  };
+
+  const handleRestart = async () => {
+    await dailyGoal.refreshProgress();
+    startSession({ unlimited: true });
+  };
+
+  // Goal met screen
+  if (showGoalMetScreen) {
+    return (
+      <div className="max-w-2xl mx-auto text-center py-12">
+        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-8 mb-6">
+          <div className="text-5xl mb-4">🎉</div>
+          <h2 className="text-2xl font-bold text-green-900 dark:text-green-200 mb-2">
+            Daily Goal Reached!
+          </h2>
+          <p className="text-green-700 dark:text-green-300 mb-4">
+            You've completed {dailyGoal.goal} cards today. Great job!
+          </p>
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <div className="h-2 bg-green-200 dark:bg-green-800 rounded-full w-48">
+              <div
+                className="h-2 bg-green-500 dark:bg-green-400 rounded-full transition-all"
+                style={{ width: '100%' }}
+              />
+            </div>
+            <span className="text-sm font-medium text-green-700 dark:text-green-300">
+              {dailyGoal.todayReviewed}/{dailyGoal.goal}
+            </span>
+          </div>
+        </div>
+        <div className="flex gap-3 justify-center">
+          <Link
+            to="/"
+            className="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+          >
+            Back to Home
+          </Link>
+          <button
+            onClick={handleLearnMore}
+            className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
+          >
+            Learn More Anyway
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // Loading state
-  if (loading) {
+  if (loading || dailyGoal.loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
@@ -64,7 +139,16 @@ export function StudyPage() {
         totalCards={progress.total}
         reviewedCards={progress.reviewed}
         startedAt={session.startedAt}
-        onRestart={startSession}
+        onRestart={handleRestart}
+        dailyGoal={dailyGoal.goal}
+        dailyProgress={dailyGoal.todayReviewed}
+        isGoalLimited={isGoalLimited}
+        remainingDueCards={totalDueCount - progress.total}
+        onLearnMore={
+          isGoalLimited && dailyGoal.goalMet && totalDueCount > progress.total
+            ? handleLearnMore
+            : undefined
+        }
       />
     );
   }

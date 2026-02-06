@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { repository } from '../data/hybrid-repository';
 import { seedDatabase } from '../data/seed-data';
 import { ThemeToggle } from '../components/settings/ThemeToggle';
+import { DailyGoalSettings } from '../components/settings/DailyGoalSettings';
 import { useAuth } from '../contexts/AuthContext';
 
 export function SettingsPage() {
@@ -169,6 +170,17 @@ export function SettingsPage() {
           Choose your preferred theme or match your system settings
         </p>
         <ThemeToggle />
+      </div>
+
+      {/* Daily Goal section */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+          Daily Goal
+        </h2>
+        <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
+          Set how many cards you want to review each day
+        </p>
+        <DailyGoalSettings />
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow divide-y divide-gray-200 dark:divide-gray-700">

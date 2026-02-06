@@ -395,6 +395,20 @@ export class SupabaseRepository implements IRepository {
     return (data || []).map(this.mapReviewLogFromDB);
   }
 
+  async getReviewLogsByDateRange(start: Date, end: Date): Promise<ReviewLog[]> {
+    const userId = await this.getCurrentUserId();
+    const { data, error } = await supabase
+      .from('review_logs')
+      .select('*')
+      .eq('user_id', userId)
+      .gte('reviewed_at', start.toISOString())
+      .lte('reviewed_at', end.toISOString())
+      .order('reviewed_at', { ascending: false });
+
+    if (error) throw error;
+    return (data || []).map(this.mapReviewLogFromDB);
+  }
+
   // ==========================================
   // UTILITY OPERATIONS
   // ==========================================

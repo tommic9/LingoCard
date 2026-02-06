@@ -162,6 +162,13 @@ export class LocalRepository implements IRepository {
     return await db.reviewLogs.where('cardId').equals(cardId).toArray();
   }
 
+  async getReviewLogsByDateRange(start: Date, end: Date): Promise<ReviewLog[]> {
+    return await db.reviewLogs
+      .where('reviewedAt')
+      .between(start, end, true, true)
+      .toArray();
+  }
+
   // Utility operations
   async clearAllData(): Promise<void> {
     await db.decks.clear();

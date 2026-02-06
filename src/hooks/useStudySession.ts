@@ -2,7 +2,7 @@
  * Custom hook for managing study sessions
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import type { Card, StudySession } from '../types';
 import { repository } from '../data/hybrid-repository';
 import { calculateSM2 } from '../algorithms/sm2';
@@ -11,50 +11,64 @@ export function useStudySession() {
   const [session, setSession] = useState<StudySession | null>(null);
   const [currentCard, setCurrentCard] = useState<Card | null>(null);
   const [isFlipped, setIsFlipped] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isGoalLimited, setIsGoalLimited] = useState(false);
+  const [totalDueCount, setTotalDueCount] = useState(0);
 
   // Initialize study session
-  const startSession = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  const startSession = useCallback(
+    async (options?: { maxCards?: number; unlimited?: boolean }) => {
+      try {
+        setLoading(true);
+        setError(null);
 
-      // Get all due cards (no deck filtering)
-      const dueCards = await repository.getAllDueCards();
+        // Get all due cards (no deck filtering)
+        const dueCards = await repository.getAllDueCards();
 
-      if (dueCards.length === 0) {
-        setError('No cards due for review');
+        if (dueCards.length === 0) {
+          setError('No cards due for review');
+          setLoading(false);
+          return;
+        }
+
+        // Shuffle cards
+        const shuffled = shuffleArray([...dueCards]);
+
+        // Track total due count for stats
+        setTotalDueCount(shuffled.length);
+
+        // Apply max cards limit if specified
+        let sessionCards = shuffled;
+        let limited = false;
+
+        if (options?.maxCards && !options?.unlimited) {
+          sessionCards = shuffled.slice(0, options.maxCards);
+          limited = sessionCards.length < shuffled.length;
+        }
+
+        setIsGoalLimited(limited);
+
+        const newSession: StudySession = {
+          deckId: 'all', // No longer using specific deck IDs
+          cards: sessionCards,
+          currentIndex: 0,
+          reviewedCount: 0,
+          startedAt: new Date(),
+        };
+
+        setSession(newSession);
+        setCurrentCard(sessionCards[0]);
+        setIsFlipped(false);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to start session');
+        console.error('Failed to start session:', err);
+      } finally {
         setLoading(false);
-        return;
       }
-
-      // Shuffle cards
-      const shuffled = shuffleArray([...dueCards]);
-
-      const newSession: StudySession = {
-        deckId: 'all', // No longer using specific deck IDs
-        cards: shuffled,
-        currentIndex: 0,
-        reviewedCount: 0,
-        startedAt: new Date(),
-      };
-
-      setSession(newSession);
-      setCurrentCard(shuffled[0]);
-      setIsFlipped(false);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to start session');
-      console.error('Failed to start session:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // Initialize on mount
-  useEffect(() => {
-    startSession();
-  }, [startSession]);
+    },
+    []
+  );
 
   // Flip the current card
   const flipCard = useCallback(() => {
@@ -165,6 +179,8 @@ export function useStudySession() {
     error,
     progress,
     isComplete,
+    isGoalLimited,
+    totalDueCount,
     startSession,
     flipCard,
     rateCard,
