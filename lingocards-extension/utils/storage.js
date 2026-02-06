@@ -3,6 +3,8 @@
  * Manages session and stats persistence
  */
 
+import { browser } from './browser-polyfill.js';
+
 const STORAGE_KEYS = {
   SESSION: 'lingocards_session',
   STATS: 'lingocards_stats'

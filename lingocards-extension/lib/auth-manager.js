@@ -3,6 +3,7 @@
  * Handles sign in, sign out, and session management
  */
 
+import { browser } from './utils/browser-polyfill.js';
 import { getSupabase } from './supabase-client.js';
 import { storage } from '../utils/storage.js';
 
