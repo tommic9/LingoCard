@@ -100,6 +100,10 @@ export class HybridRepository implements IRepository {
     return this.repo.getReviewLogs(cardId);
   }
 
+  async getReviewLogsByDateRange(start: Date, end: Date): Promise<ReviewLog[]> {
+    return this.repo.getReviewLogsByDateRange(start, end);
+  }
+
   async clearAllData(): Promise<void> {
     // Always clear local data first
     await this.local.clearAllData();

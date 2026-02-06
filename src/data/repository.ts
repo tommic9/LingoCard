@@ -27,6 +27,7 @@ export interface IRepository {
   // Review operations
   createReviewLog(log: Omit<ReviewLog, 'id'>): Promise<ReviewLog>;
   getReviewLogs(cardId: string): Promise<ReviewLog[]>;
+  getReviewLogsByDateRange(start: Date, end: Date): Promise<ReviewLog[]>;
 
   // Utility operations
   clearAllData(): Promise<void>;

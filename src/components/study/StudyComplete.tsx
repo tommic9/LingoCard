@@ -10,6 +10,11 @@ interface StudyCompleteProps {
   reviewedCards: number;
   startedAt: Date;
   onRestart?: () => void;
+  dailyGoal?: number;
+  dailyProgress?: number;
+  isGoalLimited?: boolean;
+  remainingDueCards?: number;
+  onLearnMore?: () => void;
 }
 
 export function StudyComplete({
@@ -17,6 +22,11 @@ export function StudyComplete({
   reviewedCards,
   startedAt,
   onRestart,
+  dailyGoal,
+  dailyProgress,
+  isGoalLimited,
+  remainingDueCards,
+  onLearnMore,
 }: StudyCompleteProps) {
   // Calculate session duration
   const duration = useMemo(() => {
@@ -26,6 +36,12 @@ export function StudyComplete({
     const seconds = Math.floor((diff % 60000) / 1000);
     return { minutes, seconds };
   }, [startedAt]);
+
+  // Check if daily goal is reached
+  const goalReached =
+    dailyGoal !== undefined &&
+    dailyProgress !== undefined &&
+    dailyProgress >= dailyGoal;
 
   return (
     <div className="max-w-2xl mx-auto animate-fadeIn">
@@ -51,11 +67,36 @@ export function StudyComplete({
 
         {/* Title */}
         <h1 className="text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-green-600 via-emerald-600 to-green-700 dark:from-green-400 dark:via-emerald-400 dark:to-green-500 bg-clip-text text-transparent mb-3">
-          Great Job!
+          {isGoalLimited && goalReached ? 'Daily Goal Reached!' : 'Great Job!'}
         </h1>
         <p className="text-lg text-gray-600 dark:text-gray-400 mb-10">
           You've completed your study session
         </p>
+
+        {/* Daily goal progress (if applicable) */}
+        {isGoalLimited && goalReached && dailyGoal && dailyProgress && (
+          <div className="mb-8 p-5 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 rounded-2xl border border-green-200 dark:border-green-800 shadow-sm">
+            <div className="text-sm font-semibold text-green-700 dark:text-green-400 uppercase tracking-wide mb-3">
+              Daily Progress
+            </div>
+            <div className="flex items-center justify-center gap-3 mb-3">
+              <div className="flex-1 h-3 bg-green-200 dark:bg-green-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-green-500 to-emerald-600 dark:from-green-600 dark:to-emerald-700 rounded-full transition-all"
+                  style={{ width: `${Math.min((dailyProgress / dailyGoal) * 100, 100)}%` }}
+                />
+              </div>
+              <span className="text-lg font-bold text-green-700 dark:text-green-300">
+                {dailyProgress}/{dailyGoal}
+              </span>
+            </div>
+            {remainingDueCards !== undefined && remainingDueCards > 0 && (
+              <p className="text-sm text-green-700 dark:text-green-400">
+                {remainingDueCards} more cards available if you want to keep learning!
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Statistics */}
         <div className="grid grid-cols-2 gap-5 mb-10">
@@ -98,6 +139,15 @@ export function StudyComplete({
 
         {/* Action buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+          {onLearnMore && (
+            <button
+              onClick={onLearnMore}
+              className="px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 dark:from-green-600 dark:to-emerald-700 dark:hover:from-green-500 dark:hover:to-emerald-600 text-white rounded-xl font-bold transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 active:scale-95"
+            >
+              Learn More
+            </button>
+          )}
+
           {onRestart && (
             <button
               onClick={onRestart}

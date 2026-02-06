@@ -5,6 +5,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { repository } from '../data/hybrid-repository';
+import { DailyStreakBar } from '../components/home/DailyStreakBar';
 
 interface Stats {
   totalCards: number;
@@ -54,6 +55,11 @@ export function HomePage() {
         <p className="text-lg text-gray-600 dark:text-gray-400">
           Master your vocabulary with spaced repetition
         </p>
+      </div>
+
+      {/* Daily Streak Bar */}
+      <div className="max-w-2xl mx-auto px-2">
+        <DailyStreakBar />
       </div>
 
       {/* Stats Cards */}

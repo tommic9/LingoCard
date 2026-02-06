@@ -102,7 +102,7 @@ export function SwipeableCard({
   return (
     <div
       ref={containerRef}
-      className="relative select-none"
+      className="relative select-none card-enter"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
