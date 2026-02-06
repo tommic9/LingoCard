@@ -36,7 +36,21 @@ export function LoginPage() {
         setPassword('');
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'An error occurred';
+      let message = 'An error occurred';
+
+      if (err instanceof Error) {
+        // Parse common Supabase errors for better user experience
+        if (err.message.includes('Invalid login credentials')) {
+          message = 'Invalid email or password. Please try again.';
+        } else if (err.message.includes('Email not confirmed')) {
+          message = 'Please confirm your email address before signing in.';
+        } else if (err.message.toLowerCase().includes('fetch')) {
+          message = 'Cannot connect to server. Please check your internet connection or try again later.';
+        } else {
+          message = err.message;
+        }
+      }
+
       setError(message);
     } finally {
       setLoading(false);

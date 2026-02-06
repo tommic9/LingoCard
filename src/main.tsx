@@ -2,10 +2,8 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
-import { initializeDatabase } from './data/db'
 
-// Initialize database on app start
-initializeDatabase().catch(console.error);
+// Database initialization removed - use "Load Built-in Flash cards" button in Settings
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

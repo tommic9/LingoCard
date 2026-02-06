@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **LingoCards** is a Progressive Web App (PWA) for learning English-Polish vocabulary using flashcards with the SM-2 spaced repetition algorithm. All data is stored locally in IndexedDB (Dexie.js), with future support for cloud sync via Supabase.
 
-**Current Phase:** Phase 3 (Card Management) complete. Phase 4 (UX Polish) and Phase 5 (Supabase) pending.
+**Current Phase:** Phase 4 (UX Polish) complete, Phase 5 (Supabase) complete. Deployed to Netlify.
 
 ## Development Commands
 
@@ -50,8 +50,10 @@ npm run generate-icons
 2. **Data Layer** (`src/data/`)
    - **repository.ts**: Interface definition (IRepository) - enables local/cloud abstraction
    - **local-repository.ts**: IndexedDB implementation using Dexie
+   - **supabase-repository.ts**: Supabase cloud implementation
+   - **hybrid-repository.ts**: Auto-switches between local/cloud based on auth state
    - **db.ts**: Dexie database schema and ID generation
-   - Pattern: Repository implements interface, exported as singleton `repository`
+   - Pattern: HybridRepository exports as singleton `repository`, delegates to local/cloud
    - All CRUD operations are async Promise-based
 
 3. **Algorithm** (`src/algorithms/sm2.ts`)
@@ -68,21 +70,24 @@ npm run generate-icons
    - **useDeck**: Load single deck by ID (follows same pattern as useDecks)
    - **useStudySession**: Manage study session state and SM-2 calculations
    - **useCardManagement**: User deck management + CRUD for custom cards + duplicate detection
+   - **useAllCards**: Load ALL cards across ALL decks (used by CardBrowserPage)
    - Pattern: All hooks follow standard React patterns with useState/useEffect, exported directly
    - Each hook manages its own loading/error state and error logging
 
 5. **Utilities** (`src/utils/`)
    - **csv-parser.ts**: Parse CSV files → CSVCard objects + error tracking
    - **duplicate-detector.ts**: Normalize text (NFD, lowercase, trim) + batch duplicate detection
-   - **translator.ts**: LibreTranslate API integration with LRU cache (max 100 entries)
+   - **translator.ts**: MyMemory API (primary) + LibreTranslate (fallback) with LRU cache (max 100 entries)
+   - **theme.ts**: Theme management (localStorage, system detection, DOM updates)
    - **date.ts**: Date manipulation utilities
    - Pattern: Pure functions exported individually, designed for composability
 
 6. **Components** (`src/components/`)
-   - **layout/**: Header, BottomNav, Layout wrapper (shared UI shell)
-   - **cards/**: CardForm (manual entry), CardList, Flashcard (flip animation), CsvImport (bulk import), CsvPreview (preview table), DuplicateWarning (alert)
+   - **layout/**: Header (with HeaderThemeToggle), BottomNav, Layout wrapper (shared UI shell)
+   - **cards/**: CardForm (manual entry), CardList, Flashcard (flip animation), SwipeableCard (drag/swipe), CsvImport (bulk import), CsvPreview (preview table), DuplicateWarning (alert)
    - **decks/**: DeckCard, DeckList (display components)
-   - **study/**: StudySession (main study flow), RatingButtons (4-button interface), StudyComplete (results)
+   - **study/**: StudySession (main study flow), RatingButtons (simplified 2-button), StudyComplete (results)
+   - **settings/**: ThemeToggle (3-option segmented control: Light/Dark/System)
    - Pattern: Components are functional, composed from smaller pieces, use custom hooks for state
 
 7. **Pages** (`src/pages/`)
@@ -90,7 +95,9 @@ npm run generate-icons
    - StudyPage: Study session for a deck
    - AddCardPage: Tab interface (manual entry / CSV import)
    - DeckPage: Deck details + cards
-   - SettingsPage: Data management (export, clear, import)
+   - CardBrowserPage: Browse/search/sort all cards across all decks
+   - LoginPage: Email/password authentication (Supabase)
+   - SettingsPage: Data management, theme toggle, account & sync
    - Pattern: Pages use hooks for data, compose components, handle navigation
 
 ### Data Flow Example: Creating a Card
@@ -100,7 +107,9 @@ CardForm (component, user input)
   → useCardManagement hook (state + validation)
     → repository.checkDuplicate() (data layer)
     → repository.createCard() (data layer)
-      → db.cards.add() (Dexie/IndexedDB)
+      → HybridRepository delegates to:
+        - LocalRepository → db.cards.add() (IndexedDB) [if offline]
+        - SupabaseRepository → supabase.from('cards').insert() [if authenticated]
   → DuplicateWarning (conditional alert)
   → Success message (callback)
 ```
@@ -129,6 +138,21 @@ CardForm (component, user input)
 - **Flow**: Upload → Parse → Preview (with errors/duplicates highlighted) → User confirms → Batch import with progress
 - **Caching**: Translation results cached (LRU, max 100 entries)
 
+### Hybrid Repository Pattern
+- **Auto-switching**: Automatically uses LocalRepository (offline) or SupabaseRepository (authenticated)
+- **Auth listener**: Monitors Supabase auth state to update active repository
+- **Offline-first**: All operations work locally even when authenticated (no network blocking)
+- **Where**: All hooks import from `hybrid-repository` (not `local-repository`)
+- **Clear data**: Always clears local first, then Supabase if authenticated
+
+### Theme Management
+- **Modes**: Light, Dark, System (follows OS preference)
+- **Context**: ThemeContext provides `theme`, `setTheme`, `effectiveTheme`
+- **Persistence**: localStorage with key `lingocards-theme`
+- **Flash prevention**: Inline script in index.html runs before React hydration
+- **System listener**: MediaQuery listener updates theme when OS preference changes (System mode only)
+- **UI**: HeaderThemeToggle (header, 2-button toggle) + ThemeToggle (settings, 3-option segmented control)
+
 ## Common Development Patterns
 
 ### Adding a New Hook
@@ -152,7 +176,8 @@ CardForm (component, user input)
 ### Dark Mode
 - All components should support dark mode using TailwindCSS classes
 - Pattern: `class="text-gray-900 dark:text-white"` for text, etc.
-- No manual theme detection needed (CSS media query handles it)
+- Theme managed by ThemeContext (not CSS media query directly)
+- Use `useTheme()` hook to access current theme state
 
 ### Error Handling
 - Hooks catch errors and store in `error` state
@@ -165,27 +190,33 @@ CardForm (component, user input)
 ```
 src/
 ├── components/
-│   ├── layout/          # Shell UI (Header, Nav, Layout)
-│   ├── cards/           # Card-related (form, import, display)
+│   ├── layout/          # Shell UI (Header, BottomNav, Layout)
+│   ├── cards/           # Card-related (form, import, display, swipe)
 │   ├── decks/           # Deck display components
-│   └── study/           # Study session components
-├── pages/               # Route components (HomePage, StudyPage, etc.)
-├── data/                # Repository + DB layer
+│   ├── study/           # Study session components
+│   └── settings/        # Settings UI (ThemeToggle)
+├── pages/               # Route components (HomePage, StudyPage, LoginPage, etc.)
+├── data/                # Repository + DB layer (local, supabase, hybrid)
+├── lib/                 # External service clients (supabase.ts)
+├── contexts/            # React contexts (ThemeContext, AuthContext)
 ├── algorithms/          # SM-2 algorithm
 ├── hooks/               # Custom React hooks
 ├── types/               # TypeScript definitions (central)
-├── utils/               # Utilities (csv, translator, duplicate, date)
+├── utils/               # Utilities (csv, translator, duplicate, date, theme)
 ├── constants/           # Constants (user-deck config)
-├── App.tsx              # Root component + routing
+├── App.tsx              # Root component + routing + providers
 └── index.css            # Global styles
 ```
 
 ## Build and Testing
 
 ### TypeScript
-- Strict mode enabled (`tsconfig.app.json`)
+- Strict mode enabled (`tsconfig.app.json`) with `verbatimModuleSyntax`
 - Build includes type checking: `npm run build` runs `tsc -b` first
 - Fix type errors before committing; build must succeed
+- **Type-only imports**: Use `import type { ... }` for React types like `ReactNode`, `JSX.Element`
+  - Example: `import type { ReactNode } from 'react'`
+  - Required by `verbatimModuleSyntax` setting
 
 ### Testing
 - Framework: Vitest with React Testing Library
@@ -201,12 +232,20 @@ src/
 
 ## External APIs and Dependencies
 
-### LibreTranslate (Translation)
-- **URL**: `https://libretranslate.com/translate` (POST)
-- **Rate Limiting**: None official, but be respectful
-- **Fallback**: Mock mode for testing (set `USE_MOCK_MODE = true` in `translator.ts`)
-- **Caching**: Implemented (LRU, max 100)
+### Translation APIs
+- **Primary**: MyMemory API (`https://api.mymemory.translated.net`) - 50,000 requests/day
+- **Fallback**: LibreTranslate (`https://libretranslate.com/translate`) - No official limit
+- **Strategy**: Try MyMemory first, fallback to LibreTranslate on error
+- **Caching**: Implemented (LRU, max 100 entries)
 - **Timeout**: 5 seconds to prevent hanging
+
+### Supabase (Cloud Database)
+- **Client**: `@supabase/supabase-js` v2.95.2+
+- **Config**: Environment variables `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`
+- **Auth**: Email/password authentication with JWT tokens
+- **Security**: Row Level Security (RLS) policies protect user data
+- **Schema**: 3 tables (decks, cards, review_logs) with user_id foreign keys
+- **Fallback**: App works offline if Supabase env vars missing (console warning shown)
 
 ### Dexie.js (Database)
 - Version: ^4.3.0
@@ -217,7 +256,8 @@ src/
 ### React Router
 - Version: ^7.13.0
 - Pattern: BrowserRouter in App.tsx, Routes with path-based navigation
-- Current routes: `/`, `/study/:deckId`, `/add-card`, `/settings`, `/deck/:deckId`
+- Current routes: `/`, `/study/:deckId`, `/add`, `/browse`, `/deck/:deckId`, `/settings`, `/login`
+- Layout wrapper: Most routes nested under `/` with shared Layout component
 
 ## Performance Considerations
 
@@ -232,8 +272,9 @@ src/
 - **Phase 1** ✅: Foundation, routing, data models, SM-2 algorithm
 - **Phase 2** ✅: Study components, flashcards, rating buttons, stats
 - **Phase 3** ✅: Card management (manual + CSV import, auto-translate, duplicate detection)
-- **Phase 4**: UX polish, theme toggle, animations
-- **Phase 5**: Supabase cloud sync
+- **Phase 4** ✅: UX polish (theme toggle, swipe animations, card browser, simplified rating)
+- **Phase 5** ✅: Supabase cloud sync (auth, hybrid repository, RLS policies)
+- **Deployment** ✅: Netlify deployment with environment variables
 
 ## Git Workflow
 
@@ -241,6 +282,42 @@ src/
 - **Commits**: Descriptive messages, group related changes
 - **PR workflow**: Not used (personal project), but commits should be atomic
 - **Recent features**: Phase 3 (card management + CSV import) completed with full implementation
+
+## Environment Variables
+
+Create `.env.local` file in project root (do NOT commit):
+
+```bash
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key-here
+```
+
+- **Development**: Copy from `.env.example` and fill in Supabase project values
+- **Production**: Set in Netlify Dashboard → Site settings → Environment variables
+- **Missing vars**: App will work in offline mode only (IndexedDB, no auth/sync)
+
+**Important**: Supabase anon key is PUBLIC by design - it must be in client-side JavaScript. Row Level Security (RLS) policies protect the actual data, not the key itself.
+
+## Deployment
+
+### Netlify (Recommended)
+
+1. **Setup**: Connect GitHub repo to Netlify
+2. **Build settings**: Auto-detected from `netlify.toml`
+   - Build command: `npm run build`
+   - Publish directory: `dist`
+3. **Environment variables**: Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in Netlify UI
+4. **Secrets scanning**: Whitelisted in `netlify.toml` (Supabase keys are public by design)
+5. **Custom domain**: Optional, configure in Netlify DNS settings
+
+See `DEPLOYMENT.md` for detailed instructions.
+
+### Android Access (Development)
+
+- Vite dev server configured with `host: '0.0.0.0'` in `vite.config.ts`
+- Accessible from Android devices on same WiFi network
+- Network URL shown in terminal: `http://192.168.x.x:5173`
+- PWA install prompt available on mobile browsers
 
 ## Troubleshooting
 
@@ -261,5 +338,18 @@ src/
 
 ### IndexedDB issues
 - Dexie auto-creates DB on first access
-- To reset: Use Settings page "Clear Data" button
+- To reset: Use Settings page "Clear Data" button (clears both local + Supabase if authenticated)
 - Browser DevTools → Application → Storage → IndexedDB to inspect manually
+- Old data persisting: Use provided `clear-db.html` utility or clear manually in DevTools
+
+### Supabase auth issues
+- Check environment variables are set correctly
+- Verify Supabase project is active and not paused
+- Check browser console for auth errors
+- RLS policies: Ensure user_id matches authenticated user (auth.uid())
+
+### Netlify deployment fails
+- Check build log in Netlify Dashboard → Deploys
+- Ensure environment variables are set
+- Secrets scanning: Supabase keys whitelisted in `netlify.toml`
+- TypeScript errors will fail build: Run `npm run build` locally first

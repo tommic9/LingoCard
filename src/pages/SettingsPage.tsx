@@ -31,7 +31,7 @@ export function SettingsPage() {
   const handleLoadSeedData = async () => {
     if (
       !confirm(
-        'This will clear all existing data and load built-in decks. Continue?'
+        'This will clear all existing data and load built-in flash cards. Continue?'
       )
     ) {
       return;
@@ -43,7 +43,7 @@ export function SettingsPage() {
     try {
       await repository.clearAllData();
       await seedDatabase();
-      setMessage('Built-in decks loaded successfully!');
+      setMessage('Built-in flash cards loaded successfully!');
       setTimeout(() => {
         window.location.href = '/';
       }, 1500);
@@ -76,7 +76,7 @@ export function SettingsPage() {
   const handleClearData = async () => {
     if (
       !confirm(
-        'This will permanently delete all your decks and cards. This action cannot be undone. Continue?'
+        'This will permanently delete all your flash cards. This action cannot be undone. Continue?'
       )
     ) {
       return;
@@ -85,7 +85,7 @@ export function SettingsPage() {
     setLoading(true);
     try {
       await repository.clearAllData();
-      setMessage('All data cleared successfully!');
+      setMessage('All flash cards cleared successfully!');
       setTimeout(() => {
         window.location.href = '/';
       }, 1500);
@@ -174,17 +174,17 @@ export function SettingsPage() {
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow divide-y divide-gray-200 dark:divide-gray-700">
         <div className="p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-            Built-in Decks
+            Built-in Flash Cards
           </h2>
           <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
-            Load pre-made English-Polish vocabulary decks
+            Load pre-made English-Polish flash cards (150 cards in 3 decks)
           </p>
           <button
             onClick={handleLoadSeedData}
             disabled={loading}
             className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition disabled:opacity-50"
           >
-            {loading ? 'Loading...' : 'Load Built-in Decks'}
+            {loading ? 'Loading...' : 'Load Built-in Flash Cards'}
           </button>
         </div>
 
@@ -205,17 +205,17 @@ export function SettingsPage() {
 
         <div className="p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-            Clear All Data
+            Clear All Flash Cards
           </h2>
           <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
-            Permanently delete all decks, cards, and progress
+            Permanently delete all flash cards and progress
           </p>
           <button
             onClick={handleClearData}
             disabled={loading}
             className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50"
           >
-            {loading ? 'Clearing...' : 'Clear All Data'}
+            {loading ? 'Clearing...' : 'Clear All Flash Cards'}
           </button>
         </div>
       </div>
