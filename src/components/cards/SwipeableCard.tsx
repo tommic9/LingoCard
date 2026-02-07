@@ -62,18 +62,19 @@ export function SwipeableCard({
     const distance = Math.abs(diff);
 
     if (distance > SWIPE_THRESHOLD) {
-      // Complete swipe - trigger rating and fly-out animation
+      // Complete swipe - keep dragging state to maintain position
       setIsAnimatingOut(true);
-      setIsDragging(false);
 
-      // Give animation time to complete before triggering callback
+      // Trigger fly-out animation immediately
       setTimeout(() => {
         if (diff > 0) {
           onSwipeRight?.();
         } else {
           onSwipeLeft?.();
         }
+        // Reset states after callback (new card is already rendered)
         setIsAnimatingOut(false);
+        setIsDragging(false);
         setTouchStart(null);
         setTouchCurrent(null);
       }, 300); // Match animation duration
@@ -114,7 +115,11 @@ export function SwipeableCard({
         style={{
           transform,
           opacity,
-          transition: isDragging || isAnimatingOut ? 'none' : 'all 0.3s cubic-bezier(0.23, 1, 0.320, 1)',
+          transition: isDragging
+            ? 'none'
+            : isAnimatingOut
+            ? 'all 0.3s cubic-bezier(0.23, 1, 0.320, 1)'
+            : 'all 0.3s cubic-bezier(0.23, 1, 0.320, 1)',
         }}
       >
         {/* Color overlay during swipe */}

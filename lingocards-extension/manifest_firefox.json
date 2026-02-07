@@ -1,5 +1,5 @@
 {
-  "manifest_version": 3,
+  "manifest_version": 2,
   "name": "LingoCards Helper",
   "version": "1.0.0",
   "description": "Add words to your LingoCards flashcards from any webpage",
@@ -8,21 +8,17 @@
     "contextMenus",
     "storage",
     "activeTab",
-    "notifications"
-  ],
-
-  "host_permissions": [
+    "notifications",
     "https://api.mymemory.translated.net/*",
     "https://libretranslate.com/*",
     "https://qhnyqajcijojpuufxyrn.supabase.co/*"
   ],
 
-"background": {
-  "service_worker": "background.js",
-  "type": "module"
-},
+  "background": {
+    "page": "background.html"
+  },
 
-  "action": {
+  "browser_action": {
     "default_popup": "popup/popup.html",
     "default_icon": {
       "16": "icons/icon-16.png",

@@ -75,7 +75,7 @@ export function StudyComplete({
 
         {/* Daily goal progress (if applicable) */}
         {isGoalLimited && goalReached && dailyGoal && dailyProgress && (
-          <div className="mb-8 p-5 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 rounded-2xl border border-green-200 dark:border-green-800 shadow-sm">
+          <div className="mb-8 p-5 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/50 dark:to-emerald-950/50 rounded-2xl border border-green-200 dark:border-green-700 shadow-sm">
             <div className="text-sm font-semibold text-green-700 dark:text-green-400 uppercase tracking-wide mb-3">
               Daily Progress
             </div>
@@ -100,20 +100,20 @@ export function StudyComplete({
 
         {/* Statistics */}
         <div className="grid grid-cols-2 gap-5 mb-10">
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/30 rounded-2xl p-7 shadow-md">
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/50 dark:to-blue-900/50 rounded-2xl p-7 shadow-md">
             <div className="text-5xl font-extrabold text-blue-600 dark:text-blue-400 mb-3">
               {reviewedCards}
             </div>
-            <div className="text-sm font-semibold text-blue-700 dark:text-blue-500 uppercase tracking-wide">
+            <div className="text-sm font-semibold text-blue-700 dark:text-blue-400 uppercase tracking-wide">
               Cards Reviewed
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/30 dark:to-purple-900/30 rounded-2xl p-7 shadow-md">
+          <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/50 dark:to-purple-900/50 rounded-2xl p-7 shadow-md">
             <div className="text-5xl font-extrabold text-purple-600 dark:text-purple-400 mb-3">
               {duration.minutes}:{duration.seconds.toString().padStart(2, '0')}
             </div>
-            <div className="text-sm font-semibold text-purple-700 dark:text-purple-500 uppercase tracking-wide">
+            <div className="text-sm font-semibold text-purple-700 dark:text-purple-400 uppercase tracking-wide">
               Time Spent
             </div>
           </div>
@@ -166,7 +166,7 @@ export function StudyComplete({
         </div>
 
         {/* Motivational message */}
-        <div className="mt-8 p-5 bg-gradient-to-r from-primary-50 via-primary-100/50 to-primary-50 dark:from-primary-950/30 dark:via-primary-900/20 dark:to-primary-950/30 rounded-2xl border border-primary-200 dark:border-primary-800 shadow-sm">
+        <div className="mt-8 p-5 bg-primary-50 dark:bg-primary-900/30 rounded-2xl border border-primary-200 dark:border-primary-700 shadow-sm">
           <p className="text-base font-medium text-primary-800 dark:text-primary-200 leading-relaxed">
             Keep up the great work! Consistent practice is the key to mastering a language.
           </p>

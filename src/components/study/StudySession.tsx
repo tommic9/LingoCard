@@ -34,18 +34,18 @@ export function StudySession({
   const [swipeProgress, setSwipeProgress] = useState(0);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 md:space-y-6">
       {/* Progress bar */}
       <div className="w-full max-w-2xl mx-auto px-2">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-base font-bold text-gray-800 dark:text-gray-200">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm md:text-base font-bold text-gray-800 dark:text-gray-200">
             Progress
           </span>
-          <span className="text-base font-bold text-primary-600 dark:text-primary-400">
+          <span className="text-sm md:text-base font-bold text-primary-600 dark:text-primary-400">
             {progress.current} / {progress.total}
           </span>
         </div>
-        <div className="relative w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 shadow-inner overflow-hidden">
+        <div className="relative w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 md:h-4 shadow-inner overflow-hidden">
           <div
             className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary-500 via-primary-600 to-primary-700 dark:from-primary-600 dark:via-primary-700 dark:to-primary-800 rounded-full transition-all duration-500 ease-out shadow-lg"
             style={{ width: `${progress.percentage}%` }}
@@ -54,7 +54,7 @@ export function StudySession({
           </div>
           <div className="absolute inset-0 rounded-full ring-1 ring-inset ring-black/10 dark:ring-white/10" />
         </div>
-        <div className="flex items-center justify-between mt-3 text-sm font-medium">
+        <div className="flex items-center justify-between mt-2 text-xs md:text-sm font-medium">
           <span className="text-green-600 dark:text-green-400">
             Reviewed: {progress.reviewed}
           </span>
@@ -96,9 +96,9 @@ export function StudySession({
 
       {/* Instructions when card is not flipped */}
       {!isFlipped && (
-        <div className="text-center animate-fadeIn">
-          <div className="inline-block bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-700 px-6 py-3 rounded-full shadow-md">
-            <p className="text-gray-700 dark:text-gray-300 text-base font-medium">
+        <div className="text-center animate-fadeIn pb-safe">
+          <div className="inline-block bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-700 px-4 py-2 md:px-6 md:py-3 rounded-full shadow-md">
+            <p className="text-gray-700 dark:text-gray-300 text-sm md:text-base font-medium">
               Think of the answer, then tap the card to reveal
             </p>
           </div>

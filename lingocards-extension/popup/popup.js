@@ -2,6 +2,7 @@
  * Popup script - handles login/logout and dashboard display
  */
 
+import { browser } from './utils/browser-polyfill.js';
 import { authManager } from '../lib/auth-manager.js';
 import { storage } from '../utils/storage.js';
 

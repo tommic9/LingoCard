@@ -8,6 +8,7 @@ import { repository } from '../data/hybrid-repository';
 import { seedDatabase } from '../data/seed-data';
 import { ThemeToggle } from '../components/settings/ThemeToggle';
 import { DailyGoalSettings } from '../components/settings/DailyGoalSettings';
+import { ReminderSettings } from '../components/settings/ReminderSettings';
 import { useAuth } from '../contexts/AuthContext';
 
 export function SettingsPage() {
@@ -19,10 +20,8 @@ export function SettingsPage() {
   const handleSignOut = async () => {
     try {
       await signOut();
-      setMessage('Signed out successfully!');
-      setTimeout(() => {
-        navigate('/');
-      }, 1000);
+      setMessage('Signed out successfully! You are now in offline mode.');
+      // Stay on settings page after logout
     } catch (error) {
       console.error('Failed to sign out:', error);
       setMessage('Error signing out. Please try again.');
@@ -183,6 +182,17 @@ export function SettingsPage() {
         <DailyGoalSettings />
       </div>
 
+      {/* Study Reminders section */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+          Study Reminders
+        </h2>
+        <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
+          Get notified when it's time to study
+        </p>
+        <ReminderSettings />
+      </div>
+
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow divide-y divide-gray-200 dark:divide-gray-700">
         <div className="p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
@@ -234,13 +244,13 @@ export function SettingsPage() {
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          Coming in Future Phases:
+          Coming in Future Updates:
         </h2>
         <ul className="space-y-2 text-gray-600 dark:text-gray-400">
           <li>- Language preferences</li>
-          <li>- Study reminders</li>
-          <li>- Statistics and progress tracking</li>
           <li>- Import data from JSON/CSV</li>
+          <li>- Audio pronunciation</li>
+          <li>- Custom themes</li>
         </ul>
       </div>
     </div>
