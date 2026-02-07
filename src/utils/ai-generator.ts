@@ -1,19 +1,19 @@
 /**
- * AI Example Generator using Hugging Face Inference API
+ * AI Example Generator using Hugging Face Inference Providers (Chat Completions API)
  *
  * Features:
+ * - Uses OpenAI-compatible chat completions endpoint (router.huggingface.co/v1)
  * - LRU cache (200 entries) with localStorage persistence
- * - Primary model: Mistral-7B-Instruct-v0.2 (instruction following, multilingual)
- * - Fallback model: Flan-T5-Base (faster, more reliable)
+ * - Primary model: Llama-3.2-1B-Instruct (fast, free tier)
+ * - Fallback model: Qwen2.5-1.5B-Instruct
  * - Hybrid API key: Shared env key + optional user custom key
- * - 10s timeout (text generation slower than translation)
- * - Comprehensive error handling (rate limits, cold starts, network errors)
+ * - 10s timeout with comprehensive error handling
  */
 
 // Configuration
-const HF_API_BASE = 'https://api-inference.huggingface.co/models';
-const PRIMARY_MODEL = 'mistralai/Mistral-7B-Instruct-v0.2';
-const FALLBACK_MODEL = 'google/flan-t5-base';
+const HF_CHAT_API = 'https://router.huggingface.co/v1/chat/completions';
+const PRIMARY_MODEL = 'meta-llama/Llama-3.2-1B-Instruct';
+const FALLBACK_MODEL = 'Qwen/Qwen2.5-1.5B-Instruct';
 const TIMEOUT_MS = 10000; // 10 seconds
 const MAX_CACHE_SIZE = 200;
 const USE_MOCK_MODE = false; // Set to true for testing without API calls
@@ -25,7 +25,7 @@ const STORAGE_KEY_CACHE = 'lingocards-example-cache';
 // Types
 export interface GenerateResult {
   example: string;
-  source: 'mistral' | 'flan-t5' | 'cache' | 'mock';
+  source: 'primary' | 'fallback' | 'cache' | 'mock';
 }
 
 export interface GenerateError {
@@ -48,9 +48,6 @@ class ExampleCache {
     this.loadFromStorage();
   }
 
-  /**
-   * Get example from cache
-   */
   get(key: string): string | null {
     const normalized = this.normalizeKey(key);
     const entry = this.cache.get(normalized);
@@ -66,18 +63,13 @@ class ExampleCache {
     return entry.example;
   }
 
-  /**
-   * Store example in cache
-   */
   set(key: string, value: string): void {
     const normalized = this.normalizeKey(key);
 
-    // Remove if exists (to update position)
     if (this.cache.has(normalized)) {
       this.cache.delete(normalized);
     }
 
-    // Evict oldest if at capacity
     if (this.cache.size >= this.maxSize) {
       const firstKey = this.cache.keys().next().value;
       if (firstKey !== undefined) {
@@ -85,41 +77,23 @@ class ExampleCache {
       }
     }
 
-    // Add new entry
     this.cache.set(normalized, {
       example: value,
       timestamp: Date.now(),
     });
 
-    // Persist to localStorage
     this.saveToStorage();
   }
 
-  /**
-   * Check if key exists in cache
-   */
-  has(key: string): boolean {
-    return this.cache.has(this.normalizeKey(key));
-  }
-
-  /**
-   * Clear all cache entries
-   */
   clear(): void {
     this.cache.clear();
     this.saveToStorage();
   }
 
-  /**
-   * Normalize cache key (lowercase, trim)
-   */
   private normalizeKey(key: string): string {
     return key.toLowerCase().trim();
   }
 
-  /**
-   * Load cache from localStorage
-   */
   private loadFromStorage(): void {
     try {
       const stored = localStorage.getItem(STORAGE_KEY_CACHE);
@@ -132,9 +106,6 @@ class ExampleCache {
     }
   }
 
-  /**
-   * Save cache to localStorage
-   */
   private saveToStorage(): void {
     try {
       const data = Array.from(this.cache.entries());
@@ -152,13 +123,11 @@ const cache = new ExampleCache();
  * Get API key (custom user key or shared env key)
  */
 function getApiKey(): string | null {
-  // Check for custom user key first
   const customKey = localStorage.getItem(STORAGE_KEY_API_KEY);
   if (customKey) {
     return customKey;
   }
 
-  // Fallback to shared env key
   const sharedKey = import.meta.env.VITE_HF_API_KEY;
   return sharedKey || null;
 }
@@ -192,50 +161,39 @@ export function clearExampleCache(): void {
 }
 
 /**
- * Build prompt for Mistral model (instruction-following)
+ * Build chat message for example generation
  */
-function buildMistralPrompt(word: string, translation?: string): string {
+function buildUserMessage(word: string, translation?: string): string {
   const contextNote = translation ? ` (Polish: ${translation})` : '';
-
-  return `[INST] Create a simple English example sentence using the word "${word}"${contextNote}.
-The sentence should:
-- Be 1 sentence only
-- Use natural, conversational English
-- Include the word in a clear context
-- Be appropriate for language learners (A1-B2 level)
-
-Example sentence: [/INST]`;
+  return `Write one simple English example sentence using the word "${word}"${contextNote}. The sentence should use natural, conversational English appropriate for language learners. Only output the sentence, nothing else.`;
 }
 
 /**
- * Build prompt for Flan-T5 model (task-based)
+ * Call HF Chat Completions API (OpenAI-compatible)
  */
-function buildFlanT5Prompt(word: string): string {
-  return `Write a simple example sentence using the word "${word}". Sentence:`;
-}
-
-/**
- * Call Hugging Face Inference API
- */
-async function callHuggingFaceAPI(
+async function callChatAPI(
   model: string,
-  prompt: string,
+  word: string,
+  translation: string | undefined,
   apiKey: string,
   signal: AbortSignal
 ): Promise<string> {
-  const response = await fetch(`${HF_API_BASE}/${model}`, {
+  const response = await fetch(HF_CHAT_API, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      inputs: prompt,
-      parameters: {
-        max_length: 100,
-        temperature: 0.7,
-        do_sample: true,
-      },
+      model,
+      messages: [
+        {
+          role: 'user',
+          content: buildUserMessage(word, translation),
+        },
+      ],
+      max_tokens: 60,
+      temperature: 0.7,
     }),
     signal,
   });
@@ -251,99 +209,43 @@ async function callHuggingFaceAPI(
 
   const data = await response.json();
 
-  // Handle different response formats
-  if (Array.isArray(data) && data.length > 0) {
-    return data[0].generated_text || '';
+  const text = data.choices?.[0]?.message?.content;
+  if (!text) {
+    throw new Error('Unexpected API response format');
   }
 
-  if (typeof data === 'object' && data.generated_text) {
-    return data.generated_text;
-  }
-
-  throw new Error('Unexpected API response format');
+  // Clean up: remove quotes, trailing whitespace
+  return text.replace(/^["']|["']$/g, '').trim();
 }
 
 /**
- * Generate example using Mistral model (primary)
+ * Generate example using a specific model with timeout
  */
-async function generateViaMistral(
+async function generateWithModel(
+  model: string,
   word: string,
-  translation?: string,
-  signal?: AbortSignal
+  translation?: string
 ): Promise<string | null> {
   const apiKey = getApiKey();
   if (!apiKey) return null;
 
-  try {
-    const prompt = buildMistralPrompt(word, translation);
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
-
-    const combinedSignal = signal || controller.signal;
-
-    try {
-      const result = await callHuggingFaceAPI(
-        PRIMARY_MODEL,
-        prompt,
-        apiKey,
-        combinedSignal
-      );
-
-      clearTimeout(timeoutId);
-
-      // Extract sentence from response (Mistral includes prompt in output)
-      const sentence = result.split('[/INST]').pop()?.trim() || result.trim();
-
-      // Clean up any remaining artifacts
-      return sentence
-        .replace(/^(Example sentence:|Sentence:)\s*/i, '')
-        .trim();
-    } finally {
-      clearTimeout(timeoutId);
-    }
-  } catch (error) {
-    console.error('Mistral generation failed:', error);
-    return null;
-  }
-}
-
-/**
- * Generate example using Flan-T5 model (fallback)
- */
-async function generateViaFlanT5(
-  word: string,
-  signal?: AbortSignal
-): Promise<string | null> {
-  const apiKey = getApiKey();
-  if (!apiKey) return null;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
-    const prompt = buildFlanT5Prompt(word);
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
-
-    const combinedSignal = signal || controller.signal;
-
-    try {
-      const result = await callHuggingFaceAPI(
-        FALLBACK_MODEL,
-        prompt,
-        apiKey,
-        combinedSignal
-      );
-
-      clearTimeout(timeoutId);
-
-      // Clean up Flan-T5 response
-      return result
-        .replace(/^(Sentence:|Write a simple example sentence.*?:)\s*/i, '')
-        .trim();
-    } finally {
-      clearTimeout(timeoutId);
-    }
+    const result = await callChatAPI(
+      model,
+      word,
+      translation,
+      apiKey,
+      controller.signal
+    );
+    return result;
   } catch (error) {
-    console.error('Flan-T5 generation failed:', error);
+    console.error(`${model} generation failed:`, error);
     return null;
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
@@ -351,14 +253,12 @@ async function generateViaFlanT5(
  * Handle Hugging Face API errors and return user-friendly messages
  */
 function handleHuggingFaceError(error: unknown): GenerateError {
-  // Timeout/abort errors
   if (error instanceof Error && error.name === 'AbortError') {
     return {
       error: 'Request timed out. The AI model may be loading. Please try again.',
     };
   }
 
-  // HTTP errors
   if (typeof error === 'object' && error !== null && 'status' in error) {
     const status = (error as { status: number }).status;
 
@@ -366,7 +266,7 @@ function handleHuggingFaceError(error: unknown): GenerateError {
       case 401:
       case 403:
         return {
-          error: 'Invalid API key. Please check your settings.',
+          error: 'Invalid API key or missing permissions. Check your HuggingFace token has "Inference Providers" permission enabled.',
         };
       case 429:
         return {
@@ -383,14 +283,12 @@ function handleHuggingFaceError(error: unknown): GenerateError {
     }
   }
 
-  // Network errors
   if (error instanceof TypeError && error.message.includes('fetch')) {
     return {
       error: 'Network error. Please check your connection.',
     };
   }
 
-  // Generic error
   return {
     error: 'Failed to generate example. Please try again or write one manually.',
   };
@@ -427,27 +325,21 @@ export async function generateExample(
   word: string,
   translation?: string
 ): Promise<GenerateResult | GenerateError> {
-  // Validate input
   if (!word || !word.trim()) {
     return { error: 'Please enter a word first.' };
   }
 
   const trimmedWord = word.trim();
 
-  // Mock mode for testing
   if (USE_MOCK_MODE) {
-    console.log('[Mock Mode] Generating example for:', trimmedWord);
     return getMockExample(trimmedWord);
   }
 
   // Check cache first
   const cached = cache.get(trimmedWord);
   if (cached) {
-    console.log('[Cache Hit] Using cached example for:', trimmedWord);
-    return {
-      example: cached,
-      source: 'cache',
-    };
+    console.log('[Cache Hit] Example for:', trimmedWord);
+    return { example: cached, source: 'cache' };
   }
 
   // Check API key
@@ -461,18 +353,17 @@ export async function generateExample(
   try {
     console.log('[AI Generation] Generating example for:', trimmedWord);
 
-    // Try primary model (Mistral)
-    let example = await generateViaMistral(trimmedWord, translation);
-    let source: 'mistral' | 'flan-t5' = 'mistral';
+    // Try primary model
+    let example = await generateWithModel(PRIMARY_MODEL, trimmedWord, translation);
+    let source: 'primary' | 'fallback' = 'primary';
 
-    // Fallback to secondary model (Flan-T5) if primary fails
+    // Fallback to secondary model
     if (!example) {
-      console.log('[Fallback] Trying Flan-T5 model...');
-      example = await generateViaFlanT5(trimmedWord);
-      source = 'flan-t5';
+      console.log('[Fallback] Trying fallback model...');
+      example = await generateWithModel(FALLBACK_MODEL, trimmedWord, translation);
+      source = 'fallback';
     }
 
-    // If both models fail, return error
     if (!example) {
       return {
         error: 'Failed to generate example. Please try again or write one manually.',
@@ -481,13 +372,9 @@ export async function generateExample(
 
     // Store in cache
     cache.set(trimmedWord, example);
-
     console.log(`[Success] Generated via ${source}:`, example);
 
-    return {
-      example,
-      source,
-    };
+    return { example, source };
   } catch (error) {
     console.error('[AI Generation Error]', error);
     return handleHuggingFaceError(error);
