@@ -28,8 +28,8 @@ export function useDailyProgress() {
       const goal = getStoredDailyGoal();
       const today = getStartOfToday();
 
-      // Calculate date range: 3 days back to today
-      const startDate = addDays(today, -3);
+      // Calculate date range: 2 days back to today
+      const startDate = addDays(today, -2);
 
       // Get review logs for past days (including today)
       const reviewLogs = await repository.getReviewLogsByDateRange(
@@ -53,10 +53,10 @@ export function useDailyProgress() {
       const allCardsArrays = await Promise.all(allCardsPromises);
       const allCards = allCardsArrays.flat();
 
-      // Build progress data for 7 days
+      // Build progress data for 5 days (2 back, today, 2 forward)
       const progressDays: DayProgress[] = [];
 
-      for (let offset = -3; offset <= 3; offset++) {
+      for (let offset = -2; offset <= 2; offset++) {
         const date = addDays(today, offset);
         const dateKey = date.toDateString();
         const isTodayDate = isToday(date);

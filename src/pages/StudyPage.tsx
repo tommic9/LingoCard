@@ -156,7 +156,7 @@ export function StudyPage() {
   // Active study session
   if (currentCard && progress) {
     return (
-      <div className="py-6">
+      <div className="py-4 md:py-6">
         <StudySession
           currentCard={currentCard}
           isFlipped={isFlipped}

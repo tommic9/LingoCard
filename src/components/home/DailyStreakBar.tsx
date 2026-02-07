@@ -1,5 +1,5 @@
 /**
- * Daily Streak Bar - Shows 7-day progress visualization
+ * Daily Streak Bar - Shows 5-day progress visualization (2 back, today, 2 forward)
  */
 
 import { useDailyProgress } from '../../hooks/useDailyProgress';
@@ -12,14 +12,14 @@ export function DailyStreakBar() {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4">
         <h2 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-center mb-4">
-          Your Week
+          Your Progress
         </h2>
-        <div className="flex justify-between">
-          {[...Array(7)].map((_, i) => (
+        <div className="grid grid-cols-5 gap-2">
+          {[...Array(5)].map((_, i) => (
             <div key={i} className="flex flex-col items-center gap-2">
-              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
-              <div className="w-8 h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-              <div className="w-10 h-2 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+              <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
+              <div className="w-10 h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+              <div className="w-12 h-2 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
             </div>
           ))}
         </div>
@@ -30,9 +30,9 @@ export function DailyStreakBar() {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4">
       <h2 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-center mb-4">
-        Your Week
+        Your Progress
       </h2>
-      <div className="flex justify-between">
+      <div className="grid grid-cols-5 gap-2">
         {days.map((day) => (
           <DayItem key={day.date.toISOString()} day={day} />
         ))}
@@ -51,18 +51,18 @@ function DayItem({ day }: DayItemProps) {
   // Today - Progress ring
   if (day.isToday) {
     const percentage = Math.min((day.reviewed / day.goal) * 100, 100);
-    const circumference = 2 * Math.PI * 16; // radius = 16
+    const circumference = 2 * Math.PI * 24; // radius = 24
     const strokeDashoffset = circumference - (percentage / 100) * circumference;
 
     return (
       <div className="flex flex-col items-center gap-2">
-        <div className="relative w-10 h-10 md:w-12 md:h-12">
+        <div className="relative w-12 h-12 md:w-14 md:h-14">
           {/* Background circle */}
-          <svg className="w-full h-full transform -rotate-90">
+          <svg className="w-full h-full transform -rotate-90" viewBox="0 0 56 56">
             <circle
-              cx="50%"
-              cy="50%"
-              r="16"
+              cx="28"
+              cy="28"
+              r="24"
               fill="none"
               stroke="currentColor"
               strokeWidth="3"
@@ -70,9 +70,9 @@ function DayItem({ day }: DayItemProps) {
             />
             {/* Progress circle */}
             <circle
-              cx="50%"
-              cy="50%"
-              r="16"
+              cx="28"
+              cy="28"
+              r="24"
               fill="none"
               stroke="currentColor"
               strokeWidth="3"
@@ -84,7 +84,7 @@ function DayItem({ day }: DayItemProps) {
           </svg>
           {/* Text in center */}
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-xs font-bold text-gray-900 dark:text-white">
+            <span className="text-xs font-bold text-gray-900 dark:text-white leading-none">
               {day.reviewed}/{day.goal}
             </span>
           </div>
@@ -102,7 +102,7 @@ function DayItem({ day }: DayItemProps) {
   // Past days
   if (isPast) {
     let bgColor = 'bg-gray-100 dark:bg-gray-700';
-    let textColor = 'text-gray-400 dark:text-gray-500';
+    let textColor = 'text-gray-400 dark:text-gray-400';
     let borderColor = '';
 
     if (day.goalMet) {
@@ -117,7 +117,7 @@ function DayItem({ day }: DayItemProps) {
     return (
       <div className="flex flex-col items-center gap-2">
         <div
-          className={`w-10 h-10 md:w-12 md:h-12 rounded-full ${bgColor} ${borderColor} flex items-center justify-center transition-all hover:scale-110`}
+          className={`w-12 h-12 md:w-14 md:h-14 rounded-full ${bgColor} ${borderColor} flex items-center justify-center transition-all hover:scale-110`}
         >
           <span className={`text-sm font-bold ${textColor}`}>
             {day.reviewed > 0 ? day.reviewed : ''}
@@ -127,7 +127,7 @@ function DayItem({ day }: DayItemProps) {
           <div className="text-xs font-medium text-gray-600 dark:text-gray-400">
             {day.dayLabel}
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-500">{day.dateLabel}</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">{day.dateLabel}</div>
         </div>
       </div>
     );
@@ -136,7 +136,7 @@ function DayItem({ day }: DayItemProps) {
   // Future days
   return (
     <div className="flex flex-col items-center gap-2">
-      <div className="w-10 h-10 md:w-12 md:h-12 rounded-full border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center transition-all hover:scale-110">
+      <div className="w-12 h-12 md:w-14 md:h-14 rounded-full border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center transition-all hover:scale-110">
         <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
           {day.dueCards || 0}
         </span>
@@ -145,7 +145,7 @@ function DayItem({ day }: DayItemProps) {
         <div className="text-xs font-medium text-gray-600 dark:text-gray-400">
           {day.dayLabel}
         </div>
-        <div className="text-xs text-gray-500 dark:text-gray-500">{day.dateLabel}</div>
+        <div className="text-xs text-gray-500 dark:text-gray-400">{day.dateLabel}</div>
       </div>
     </div>
   );

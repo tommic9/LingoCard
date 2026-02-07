@@ -32,23 +32,23 @@ export function DeckCard({ deck }: DeckCardProps) {
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3 pt-5 border-t-2 border-gray-100 dark:border-gray-700">
-        <div className="text-center p-3 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/30 dark:to-blue-900/30 rounded-xl">
+        <div className="text-center p-3 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/50 dark:to-blue-900/50 rounded-xl">
           <div className="text-2xl font-extrabold text-blue-600 dark:text-blue-400">
             {deck.stats.totalCards}
           </div>
-          <div className="text-xs font-semibold text-blue-700 dark:text-blue-500 uppercase tracking-wide mt-1">Total</div>
+          <div className="text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase tracking-wide mt-1">Total</div>
         </div>
-        <div className="text-center p-3 bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-950/30 dark:to-orange-900/30 rounded-xl">
+        <div className="text-center p-3 bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-950/50 dark:to-orange-900/50 rounded-xl">
           <div className="text-2xl font-extrabold text-orange-600 dark:text-orange-400">
             {deck.stats.dueCards}
           </div>
-          <div className="text-xs font-semibold text-orange-700 dark:text-orange-500 uppercase tracking-wide mt-1">Due</div>
+          <div className="text-xs font-semibold text-orange-700 dark:text-orange-400 uppercase tracking-wide mt-1">Due</div>
         </div>
-        <div className="text-center p-3 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950/30 dark:to-green-900/30 rounded-xl">
+        <div className="text-center p-3 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950/50 dark:to-green-900/50 rounded-xl">
           <div className="text-2xl font-extrabold text-green-600 dark:text-green-400">
             {deck.stats.newCards}
           </div>
-          <div className="text-xs font-semibold text-green-700 dark:text-green-500 uppercase tracking-wide mt-1">New</div>
+          <div className="text-xs font-semibold text-green-700 dark:text-green-400 uppercase tracking-wide mt-1">New</div>
         </div>
       </div>
     </Link>
