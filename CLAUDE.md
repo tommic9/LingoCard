@@ -78,6 +78,7 @@ npm run generate-icons
    - **csv-parser.ts**: Parse CSV files → CSVCard objects + error tracking
    - **duplicate-detector.ts**: Normalize text (NFD, lowercase, trim) + batch duplicate detection
    - **translator.ts**: MyMemory API (primary) + LibreTranslate (fallback) with LRU cache (max 100 entries)
+   - **ai-generator.ts**: Hugging Face API client with Mistral-7B (primary) + Flan-T5 (fallback), LRU cache (max 200 entries, localStorage persistence), hybrid API key management
    - **theme.ts**: Theme management (localStorage, system detection, DOM updates)
    - **date.ts**: Date manipulation utilities
    - Pattern: Pure functions exported individually, designed for composability
@@ -87,7 +88,7 @@ npm run generate-icons
    - **cards/**: CardForm (manual entry), CardList, Flashcard (flip animation), SwipeableCard (drag/swipe), CsvImport (bulk import), CsvPreview (preview table), DuplicateWarning (alert)
    - **decks/**: DeckCard, DeckList (display components)
    - **study/**: StudySession (main study flow), RatingButtons (simplified 2-button), StudyComplete (results)
-   - **settings/**: ThemeToggle (3-option segmented control: Light/Dark/System)
+   - **settings/**: ThemeToggle (3-option segmented control: Light/Dark/System), HuggingFaceSettings (API key management for AI example generator)
    - Pattern: Components are functional, composed from smaller pieces, use custom hooks for state
 
 7. **Pages** (`src/pages/`)
@@ -97,7 +98,7 @@ npm run generate-icons
    - DeckPage: Deck details + cards
    - CardBrowserPage: Browse/search/sort all cards across all decks
    - LoginPage: Email/password authentication (Supabase)
-   - SettingsPage: Data management, theme toggle, account & sync
+   - SettingsPage: Data management, theme toggle, account & sync, AI example generator settings
    - Pattern: Pages use hooks for data, compose components, handle navigation
 
 ### Data Flow Example: Creating a Card
@@ -239,6 +240,16 @@ src/
 - **Caching**: Implemented (LRU, max 100 entries)
 - **Timeout**: 5 seconds to prevent hanging
 
+### Hugging Face Inference API (AI Example Generator)
+- **Primary Model**: Mistral-7B-Instruct-v0.2 (instruction following, multilingual)
+- **Fallback Model**: Flan-T5-Base (faster, more reliable)
+- **Free Tier**: ~100-400 requests/hour (shared key), ~1000/hour (user key)
+- **Config**: Hybrid approach - shared key in `VITE_HF_API_KEY` + optional user key in Settings
+- **Caching**: LRU cache (200 entries) persisted to localStorage
+- **Timeout**: 10 seconds (cold starts can take 20-30s)
+- **Error Handling**: Automatic fallback, rate limit detection, user-friendly messages
+- **Use Case**: Generate contextual example sentences for vocabulary words
+
 ### Supabase (Cloud Database)
 - **Client**: `@supabase/supabase-js` v2.95.2+
 - **Config**: Environment variables `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`
@@ -290,13 +301,19 @@ Create `.env.local` file in project root (do NOT commit):
 ```bash
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key-here
+
+# Optional: Hugging Face API key for AI example generation
+VITE_HF_API_KEY=hf_your_api_key_here
 ```
 
-- **Development**: Copy from `.env.example` and fill in Supabase project values
+- **Development**: Copy from `.env.example` and fill in values
 - **Production**: Set in Netlify Dashboard → Site settings → Environment variables
-- **Missing vars**: App will work in offline mode only (IndexedDB, no auth/sync)
+- **Missing Supabase vars**: App will work in offline mode only (IndexedDB, no auth/sync)
+- **Missing HF API key**: AI example generation won't work unless users add their own key in Settings
 
-**Important**: Supabase anon key is PUBLIC by design - it must be in client-side JavaScript. Row Level Security (RLS) policies protect the actual data, not the key itself.
+**Important**:
+- Supabase anon key is PUBLIC by design - it must be in client-side JavaScript. Row Level Security (RLS) policies protect the actual data, not the key itself.
+- Hugging Face API key is also PUBLIC when deployed - rate limits apply to the shared key, users can add their own in Settings for unlimited access.
 
 ## Deployment
 

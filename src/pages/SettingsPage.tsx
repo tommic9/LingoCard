@@ -9,6 +9,7 @@ import { seedDatabase } from '../data/seed-data';
 import { ThemeToggle } from '../components/settings/ThemeToggle';
 import { DailyGoalSettings } from '../components/settings/DailyGoalSettings';
 import { ReminderSettings } from '../components/settings/ReminderSettings';
+import { HuggingFaceSettings } from '../components/settings/HuggingFaceSettings';
 import { useAuth } from '../contexts/AuthContext';
 
 export function SettingsPage() {
@@ -191,6 +192,17 @@ export function SettingsPage() {
           Get notified when it's time to study
         </p>
         <ReminderSettings />
+      </div>
+
+      {/* AI Example Generator section */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+          AI Example Generator
+        </h2>
+        <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
+          Configure Hugging Face API for AI-generated example sentences
+        </p>
+        <HuggingFaceSettings />
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow divide-y divide-gray-200 dark:divide-gray-700">
