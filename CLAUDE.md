@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **LingoCards** is a Progressive Web App (PWA) for learning English-Polish vocabulary using flashcards with the SM-2 spaced repetition algorithm. All data is stored locally in IndexedDB (Dexie.js), with future support for cloud sync via Supabase.
 
-**Current Phase:** Phase 4 (UX Polish) complete, Phase 5 (Supabase) complete. Deployed to Netlify.
+**Current Status:** All core phases complete (Foundation, Study, Card Management, UX Polish, Supabase). Statistics page, study reminders, and Google OAuth implemented. Deployed to Netlify.
 
 ## Development Commands
 
@@ -71,6 +71,8 @@ npm run generate-icons
    - **useStudySession**: Manage study session state and SM-2 calculations
    - **useCardManagement**: User deck management + CRUD for custom cards + duplicate detection
    - **useAllCards**: Load ALL cards across ALL decks (used by CardBrowserPage)
+   - **useDailyProgress**: Track daily study progress (5 days: 2 back, today, 2 forward)
+   - **useStatistics**: Comprehensive statistics (cards, reviews, streaks, accuracy)
    - Pattern: All hooks follow standard React patterns with useState/useEffect, exported directly
    - Each hook manages its own loading/error state and error logging
 
@@ -80,24 +82,29 @@ npm run generate-icons
    - **translator.ts**: MyMemory API (primary) + LibreTranslate (fallback) with LRU cache (max 100 entries)
    - **theme.ts**: Theme management (localStorage, system detection, DOM updates)
    - **date.ts**: Date manipulation utilities
+   - **notifications.ts**: Browser Notification API wrapper for study reminders
+   - **reminders.ts**: Study reminder logic and preferences (localStorage-based)
+   - **daily-goal.ts**: Daily goal preferences and storage
    - Pattern: Pure functions exported individually, designed for composability
 
 6. **Components** (`src/components/`)
-   - **layout/**: Header (with HeaderThemeToggle), BottomNav, Layout wrapper (shared UI shell)
+   - **layout/**: Header (with HeaderThemeToggle), BottomNav (6 tabs), Layout wrapper (shared UI shell)
    - **cards/**: CardForm (manual entry), CardList, Flashcard (flip animation), SwipeableCard (drag/swipe), CsvImport (bulk import), CsvPreview (preview table), DuplicateWarning (alert)
    - **decks/**: DeckCard, DeckList (display components)
    - **study/**: StudySession (main study flow), RatingButtons (simplified 2-button), StudyComplete (results)
-   - **settings/**: ThemeToggle (3-option segmented control: Light/Dark/System)
+   - **settings/**: ThemeToggle (3-option segmented control), DailyGoalSettings, ReminderSettings
+   - **home/**: DailyStreakBar (5-day progress visualization with circles)
    - Pattern: Components are functional, composed from smaller pieces, use custom hooks for state
 
 7. **Pages** (`src/pages/`)
-   - HomePage: Main deck list + stats
-   - StudyPage: Study session for a deck
+   - HomePage: Main deck list + DailyStreakBar (5-day timeline)
+   - StudyPage: Study session with swipeable flashcards
    - AddCardPage: Tab interface (manual entry / CSV import)
    - DeckPage: Deck details + cards
    - CardBrowserPage: Browse/search/sort all cards across all decks
-   - LoginPage: Email/password authentication (Supabase)
-   - SettingsPage: Data management, theme toggle, account & sync
+   - StatisticsPage: Comprehensive stats (cards, reviews, streaks, accuracy, time estimates)
+   - LoginPage: Email/password + Google OAuth authentication
+   - SettingsPage: Data management, theme, daily goals, reminders, account & sync
    - Pattern: Pages use hooks for data, compose components, handle navigation
 
 ### Data Flow Example: Creating a Card
@@ -153,6 +160,27 @@ CardForm (component, user input)
 - **System listener**: MediaQuery listener updates theme when OS preference changes (System mode only)
 - **UI**: HeaderThemeToggle (header, 2-button toggle) + ThemeToggle (settings, 3-option segmented control)
 
+### Daily Progress Timeline
+- **Display**: 5 days (2 back, today, 2 forward) instead of full week
+- **Today**: Progress ring showing reviewed/goal with percentage
+- **Past days**: Solid circles (green=goal met, orange=partial, gray=none)
+- **Future days**: Dashed circles showing due cards count
+- **Implementation**: useDailyProgress hook + DailyStreakBar component
+
+### Study Reminders
+- **Storage**: localStorage with key `lingocards-reminders`
+- **Preferences**: enabled (bool), time (HH:MM), lastChecked (ISO date)
+- **Logic**: No reminder if studied today, once per day, 1-hour window around chosen time
+- **Notifications**: Browser Notification API with permission request flow
+- **UI**: ReminderSettings component in Settings page with toggle, time picker, test button
+
+### Statistics Tracking
+- **Metrics**: Total cards/reviews, streak (current/longest), accuracy (last 100 reviews)
+- **Status breakdown**: New (repetitions=0), Learning (<21 days), Mature (≥21 days)
+- **Time estimates**: Based on 10 seconds per card average
+- **Streak calculation**: Consecutive days with reviews, using reviewLogs date grouping
+- **Implementation**: useStatistics hook + StatisticsPage with visual stat cards
+
 ## Common Development Patterns
 
 ### Adding a New Hook
@@ -178,6 +206,10 @@ CardForm (component, user input)
 - Pattern: `class="text-gray-900 dark:text-white"` for text, etc.
 - Theme managed by ThemeContext (not CSS media query directly)
 - Use `useTheme()` hook to access current theme state
+- **Contrast guidelines**: Avoid `dark:text-*-500` on `dark:bg-gray-800` (WCAG AA fails)
+  - Use `dark:text-*-400` or `dark:text-*-300` for better contrast
+  - Gradients: Use opacity `/50` minimum in dark mode (not `/30`)
+  - Test all text/background combinations in both themes
 
 ### Error Handling
 - Hooks catch errors and store in `error` state
@@ -242,7 +274,8 @@ src/
 ### Supabase (Cloud Database)
 - **Client**: `@supabase/supabase-js` v2.95.2+
 - **Config**: Environment variables `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`
-- **Auth**: Email/password authentication with JWT tokens
+- **Auth**: Email/password + Google OAuth authentication with JWT tokens
+- **Google OAuth**: Requires Client ID/Secret in Supabase Dashboard + redirect URI in Google Cloud Console
 - **Security**: Row Level Security (RLS) policies protect user data
 - **Schema**: 3 tables (decks, cards, review_logs) with user_id foreign keys
 - **Fallback**: App works offline if Supabase env vars missing (console warning shown)
@@ -256,8 +289,9 @@ src/
 ### React Router
 - Version: ^7.13.0
 - Pattern: BrowserRouter in App.tsx, Routes with path-based navigation
-- Current routes: `/`, `/study/:deckId`, `/add`, `/browse`, `/deck/:deckId`, `/settings`, `/login`
+- Current routes: `/`, `/study/:deckId`, `/add`, `/browse`, `/statistics`, `/settings`, `/login`
 - Layout wrapper: Most routes nested under `/` with shared Layout component
+- BottomNav tabs: Home, Study, Add, Browse, Stats, Settings
 
 ## Performance Considerations
 
@@ -267,14 +301,24 @@ src/
 4. **PWA**: Service worker caches static assets + runtime caching for Google Fonts
 5. **Gzip**: Production build optimized automatically by Vite
 
-## Phase Roadmap
+## Implementation Status
 
 - **Phase 1** ✅: Foundation, routing, data models, SM-2 algorithm
 - **Phase 2** ✅: Study components, flashcards, rating buttons, stats
 - **Phase 3** ✅: Card management (manual + CSV import, auto-translate, duplicate detection)
 - **Phase 4** ✅: UX polish (theme toggle, swipe animations, card browser, simplified rating)
-- **Phase 5** ✅: Supabase cloud sync (auth, hybrid repository, RLS policies)
+- **Phase 5** ✅: Supabase cloud sync (auth, hybrid repository, RLS policies, Google OAuth)
+- **Phase 6** ✅: Statistics & reminders (comprehensive stats page, browser notifications, daily progress timeline)
 - **Deployment** ✅: Netlify deployment with environment variables
+
+### Recent Additions
+- Custom PWA icons (LingoCards branding)
+- Statistics page with streaks, accuracy, card status breakdown
+- Study reminders with browser notifications
+- Google OAuth login integration
+- 5-day progress timeline (optimized from 7 days)
+- Mobile-optimized study card height (45vh, prevents scrolling)
+- Dark mode contrast improvements (WCAG AA compliance)
 
 ## Git Workflow
 
@@ -353,3 +397,22 @@ See `DEPLOYMENT.md` for detailed instructions.
 - Ensure environment variables are set
 - Secrets scanning: Supabase keys whitelisted in `netlify.toml`
 - TypeScript errors will fail build: Run `npm run build` locally first
+
+### Google OAuth issues
+- **Error 400: redirect_uri_mismatch**: Check Google Cloud Console Authorized redirect URIs
+- Must add Supabase callback URL: `https://<project-ref>.supabase.co/auth/v1/callback`
+- Google OAuth doesn't work on localhost - test on deployed app (Netlify)
+- Ensure Client ID and Secret are set in Supabase Dashboard → Authentication → Providers → Google
+
+### Study reminders not working
+- Check browser notification permission (required)
+- Notifications only work on HTTPS or localhost
+- Check if browser supports Notification API (modern browsers only)
+- Verify reminder preferences in localStorage (`lingocards-reminders`)
+- Test with "Send Test Notification" button in Settings
+
+### Icons not showing
+- Run `npm run generate-icons` to regenerate from SVG
+- Check `public/icons/` directory for PNG files (192x192, 512x512)
+- Verify `index.html` points to `/icons/icon.svg`
+- Clear browser cache and reload
