@@ -21,6 +21,8 @@ const USE_MOCK_MODE = false; // Set to true for testing without API calls
 // localStorage keys
 const STORAGE_KEY_API_KEY = 'lingocards-hf-api-key';
 const STORAGE_KEY_CACHE = 'lingocards-example-cache';
+const STORAGE_KEY_DEFINITION_CACHE = 'lingocards-definition-cache';
+const STORAGE_KEY_STORY_CACHE = 'lingocards-story-cache';
 
 // Types
 export interface GenerateResult {
@@ -30,6 +32,17 @@ export interface GenerateResult {
 
 export interface GenerateError {
   error: string;
+}
+
+export interface DefinitionResult {
+  definition: string;
+  synonyms: string[];
+  source: 'primary' | 'fallback' | 'cache' | 'mock';
+}
+
+export interface StoryResult {
+  story: string;
+  source: 'primary' | 'fallback' | 'cache' | 'mock';
 }
 
 interface CacheEntry {
@@ -43,8 +56,10 @@ interface CacheEntry {
 class ExampleCache {
   private cache = new Map<string, CacheEntry>();
   private maxSize = MAX_CACHE_SIZE;
+  private storageKey: string;
 
-  constructor() {
+  constructor(storageKey: string = STORAGE_KEY_CACHE) {
+    this.storageKey = storageKey;
     this.loadFromStorage();
   }
 
@@ -96,7 +111,7 @@ class ExampleCache {
 
   private loadFromStorage(): void {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY_CACHE);
+      const stored = localStorage.getItem(this.storageKey);
       if (!stored) return;
 
       const data = JSON.parse(stored) as Array<[string, CacheEntry]>;
@@ -109,15 +124,17 @@ class ExampleCache {
   private saveToStorage(): void {
     try {
       const data = Array.from(this.cache.entries());
-      localStorage.setItem(STORAGE_KEY_CACHE, JSON.stringify(data));
+      localStorage.setItem(this.storageKey, JSON.stringify(data));
     } catch (error) {
       console.error('Failed to save example cache to localStorage:', error);
     }
   }
 }
 
-// Global cache instance
-const cache = new ExampleCache();
+// Global cache instances
+const cache = new ExampleCache(STORAGE_KEY_CACHE);
+const definitionCache = new ExampleCache(STORAGE_KEY_DEFINITION_CACHE);
+const storyCache = new ExampleCache(STORAGE_KEY_STORY_CACHE);
 
 /**
  * Get API key (custom user key or shared env key)
@@ -173,10 +190,10 @@ function buildUserMessage(word: string, translation?: string): string {
  */
 async function callChatAPI(
   model: string,
-  word: string,
-  translation: string | undefined,
+  userMessage: string,
   apiKey: string,
-  signal: AbortSignal
+  signal: AbortSignal,
+  maxTokens: number = 60
 ): Promise<string> {
   const response = await fetch(HF_CHAT_API, {
     method: 'POST',
@@ -189,10 +206,10 @@ async function callChatAPI(
       messages: [
         {
           role: 'user',
-          content: buildUserMessage(word, translation),
+          content: userMessage,
         },
       ],
-      max_tokens: 60,
+      max_tokens: maxTokens,
       temperature: 0.7,
     }),
     signal,
@@ -219,12 +236,12 @@ async function callChatAPI(
 }
 
 /**
- * Generate example using a specific model with timeout
+ * Generate text using a specific model with timeout
  */
 async function generateWithModel(
   model: string,
-  word: string,
-  translation?: string
+  userMessage: string,
+  maxTokens: number = 60
 ): Promise<string | null> {
   const apiKey = getApiKey();
   if (!apiKey) return null;
@@ -235,10 +252,10 @@ async function generateWithModel(
   try {
     const result = await callChatAPI(
       model,
-      word,
-      translation,
+      userMessage,
       apiKey,
-      controller.signal
+      controller.signal,
+      maxTokens
     );
     return result;
   } catch (error) {
@@ -353,14 +370,16 @@ export async function generateExample(
   try {
     console.log('[AI Generation] Generating example for:', trimmedWord);
 
+    const message = buildUserMessage(trimmedWord, translation);
+
     // Try primary model
-    let example = await generateWithModel(PRIMARY_MODEL, trimmedWord, translation);
+    let example = await generateWithModel(PRIMARY_MODEL, message);
     let source: 'primary' | 'fallback' = 'primary';
 
     // Fallback to secondary model
     if (!example) {
       console.log('[Fallback] Trying fallback model...');
-      example = await generateWithModel(FALLBACK_MODEL, trimmedWord, translation);
+      example = await generateWithModel(FALLBACK_MODEL, message);
       source = 'fallback';
     }
 
@@ -377,6 +396,197 @@ export async function generateExample(
     return { example, source };
   } catch (error) {
     console.error('[AI Generation Error]', error);
+    return handleHuggingFaceError(error);
+  }
+}
+
+/**
+ * Generate definition and synonyms for a word
+ */
+export async function generateDefinition(
+  word: string,
+  translation?: string
+): Promise<DefinitionResult | GenerateError> {
+  if (!word || !word.trim()) {
+    return { error: 'Please enter a word first.' };
+  }
+
+  const trimmedWord = word.trim();
+
+  if (USE_MOCK_MODE) {
+    return {
+      definition: `A common English word meaning "${translation || trimmedWord}".`,
+      synonyms: ['similar1', 'similar2', 'similar3'],
+      source: 'mock',
+    };
+  }
+
+  // Check cache
+  const cached = definitionCache.get(trimmedWord);
+  if (cached) {
+    console.log('[Cache Hit] Definition for:', trimmedWord);
+    try {
+      const parsed = JSON.parse(cached);
+      return { ...parsed, source: 'cache' as const };
+    } catch {
+      // Invalid cache entry, continue to generate
+    }
+  }
+
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    return { error: 'AI generation requires an API key. Add one in Settings.' };
+  }
+
+  const contextNote = translation ? ` (Polish translation: ${translation})` : '';
+  const message = `For the English word "${trimmedWord}"${contextNote}, provide:
+1. A short definition (one sentence)
+2. Exactly 3 synonyms
+
+Format your response EXACTLY like this:
+Definition: [your definition here]
+Synonyms: [word1], [word2], [word3]`;
+
+  try {
+    console.log('[AI Generation] Generating definition for:', trimmedWord);
+
+    let result = await generateWithModel(PRIMARY_MODEL, message, 100);
+    let source: 'primary' | 'fallback' = 'primary';
+
+    if (!result) {
+      console.log('[Fallback] Trying fallback model for definition...');
+      result = await generateWithModel(FALLBACK_MODEL, message, 100);
+      source = 'fallback';
+    }
+
+    if (!result) {
+      return { error: 'Failed to generate definition. Please try again.' };
+    }
+
+    // Parse the response
+    const { definition, synonyms } = parseDefinitionResponse(result, trimmedWord);
+
+    // Cache the result
+    definitionCache.set(trimmedWord, JSON.stringify({ definition, synonyms }));
+    console.log(`[Success] Definition via ${source}:`, definition, synonyms);
+
+    return { definition, synonyms, source };
+  } catch (error) {
+    console.error('[AI Definition Error]', error);
+    return handleHuggingFaceError(error);
+  }
+}
+
+/**
+ * Parse AI response for definition and synonyms
+ */
+function parseDefinitionResponse(
+  response: string,
+  word: string
+): { definition: string; synonyms: string[] } {
+  let definition = '';
+  let synonyms: string[] = [];
+
+  // Try to extract "Definition: ..." line
+  const defMatch = response.match(/Definition:\s*(.+?)(?:\n|$)/i);
+  if (defMatch) {
+    definition = defMatch[1].trim();
+  }
+
+  // Try to extract "Synonyms: ..." line
+  const synMatch = response.match(/Synonyms:\s*(.+?)(?:\n|$)/i);
+  if (synMatch) {
+    synonyms = synMatch[1]
+      .split(/[,;]/)
+      .map((s) => s.trim().replace(/^\[|\]$/g, ''))
+      .filter((s) => s.length > 0 && s.toLowerCase() !== word.toLowerCase())
+      .slice(0, 5);
+  }
+
+  // Fallback: if no structured format found, use the whole response as definition
+  if (!definition) {
+    definition = response.split('\n')[0].trim();
+  }
+
+  return { definition, synonyms };
+}
+
+/**
+ * Generate a short story using given vocabulary words
+ */
+export async function generateStory(
+  words: string[],
+  level: 'A1' | 'A2' | 'B1' | 'B2' = 'B1'
+): Promise<StoryResult | GenerateError> {
+  if (!words || words.length === 0) {
+    return { error: 'Please select at least one word.' };
+  }
+
+  if (words.length > 15) {
+    return { error: 'Please select at most 15 words.' };
+  }
+
+  const sortedWords = [...words].sort();
+  const cacheKey = `${level}:${sortedWords.join(',')}`;
+
+  if (USE_MOCK_MODE) {
+    return {
+      story: `Once upon a time, there was a student learning English. They practiced words like ${words.slice(0, 3).join(', ')}. Every day they got better and better.`,
+      source: 'mock',
+    };
+  }
+
+  // Check cache
+  const cached = storyCache.get(cacheKey);
+  if (cached) {
+    console.log('[Cache Hit] Story for:', sortedWords);
+    return { story: cached, source: 'cache' };
+  }
+
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    return { error: 'AI generation requires an API key. Add one in Settings.' };
+  }
+
+  const levelDescriptions: Record<string, string> = {
+    A1: 'very simple vocabulary, short sentences, present tense only',
+    A2: 'simple vocabulary, basic past tense allowed, short paragraphs',
+    B1: 'intermediate vocabulary, varied sentence structures, natural flow',
+    B2: 'advanced vocabulary, complex sentences, idiomatic expressions allowed',
+  };
+
+  const wordList = words.map((w) => `"${w}"`).join(', ');
+  const message = `Write a short story (3-5 sentences) using these English words: ${wordList}.
+
+Requirements:
+- Language level: ${level} (${levelDescriptions[level]})
+- Use ALL the listed words naturally in the story
+- Make it engaging and easy to follow
+- Only output the story, nothing else`;
+
+  try {
+    console.log('[AI Generation] Generating story with words:', words);
+
+    let story = await generateWithModel(PRIMARY_MODEL, message, 250);
+    let source: 'primary' | 'fallback' = 'primary';
+
+    if (!story) {
+      console.log('[Fallback] Trying fallback model for story...');
+      story = await generateWithModel(FALLBACK_MODEL, message, 250);
+      source = 'fallback';
+    }
+
+    if (!story) {
+      return { error: 'Failed to generate story. Please try again.' };
+    }
+
+    // Cache the result
+    storyCache.set(cacheKey, story);
+    console.log(`[Success] Story generated via ${source}`);
+
+    return { story, source };
+  } catch (error) {
+    console.error('[AI Story Error]', error);
     return handleHuggingFaceError(error);
   }
 }

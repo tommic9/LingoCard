@@ -6,7 +6,7 @@ import { useState, useEffect, useRef } from 'react';
 import type { Card } from '../../types';
 import { useCardManagement } from '../../hooks/useCardManagement';
 import { translateEnglishToPolish } from '../../utils/translator';
-import { generateExample } from '../../utils/ai-generator';
+import { generateExample, generateDefinition } from '../../utils/ai-generator';
 import { DuplicateWarning } from './DuplicateWarning';
 
 interface CardFormProps {
@@ -34,6 +34,9 @@ export function CardForm({ onCardCreated, onCancel, initialValues }: CardFormPro
   const [success, setSuccess] = useState(false);
   const [translating, setTranslating] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [generatingDefinition, setGeneratingDefinition] = useState(false);
+  const [definition, setDefinition] = useState<string | null>(null);
+  const [synonyms, setSynonyms] = useState<string[]>([]);
   const [duplicateCard, setDuplicateCard] = useState<Card | null>(null);
   const [allowDuplicate, setAllowDuplicate] = useState(false);
 
@@ -95,6 +98,10 @@ export function CardForm({ onCardCreated, onCancel, initialValues }: CardFormPro
       return;
     }
 
+    if (generating || generatingDefinition) {
+      return;
+    }
+
     setGenerating(true);
     setError(null);
 
@@ -116,6 +123,38 @@ export function CardForm({ onCardCreated, onCancel, initialValues }: CardFormPro
       setError('Failed to generate example. Please try again.');
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const handleGenerateDefinition = async () => {
+    if (!formData.front.trim()) {
+      setError('Please enter English text first');
+      return;
+    }
+
+    if (generating || generatingDefinition) {
+      return;
+    }
+
+    setGeneratingDefinition(true);
+    setError(null);
+
+    try {
+      const result = await generateDefinition(
+        formData.front,
+        formData.back || undefined
+      );
+
+      if ('error' in result) {
+        setError(result.error);
+      } else {
+        setDefinition(result.definition);
+        setSynonyms(result.synonyms);
+      }
+    } catch (err) {
+      setError('Failed to generate definition. Please try again.');
+    } finally {
+      setGeneratingDefinition(false);
     }
   };
 
@@ -183,6 +222,8 @@ export function CardForm({ onCardCreated, onCancel, initialValues }: CardFormPro
       });
 
       setFormData({ front: '', back: '', example: '' });
+      setDefinition(null);
+      setSynonyms([]);
       setSuccess(true);
       setAllowDuplicate(false);
 
@@ -294,14 +335,24 @@ export function CardForm({ onCardCreated, onCancel, initialValues }: CardFormPro
             <label htmlFor="example" className="block text-sm font-semibold text-gray-900 dark:text-white">
               Example (Optional)
             </label>
-            <button
-              type="button"
-              onClick={handleGenerateExample}
-              disabled={loading || generating || !formData.front.trim()}
-              className="text-xs px-3 py-1 bg-accent-600 text-white rounded hover:bg-accent-700 transition disabled:opacity-50"
-            >
-              {generating ? 'Generating...' : '✨ Generate Example'}
-            </button>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleGenerateExample}
+                disabled={loading || generating || !formData.front.trim()}
+                className="text-xs px-3 py-1 bg-accent-600 text-white rounded hover:bg-accent-700 transition disabled:opacity-50"
+              >
+                {generating ? 'Generating...' : '✨ Example'}
+              </button>
+              <button
+                type="button"
+                onClick={handleGenerateDefinition}
+                disabled={loading || generatingDefinition || !formData.front.trim()}
+                className="text-xs px-3 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 transition disabled:opacity-50"
+              >
+                {generatingDefinition ? 'Loading...' : '📖 Definition'}
+              </button>
+            </div>
           </div>
           <textarea
             ref={exampleRef}
@@ -317,6 +368,33 @@ export function CardForm({ onCardCreated, onCancel, initialValues }: CardFormPro
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
             {(formData.example || '').length}/1000
           </p>
+
+          {/* Definition & Synonyms Display */}
+          {(definition || synonyms.length > 0) && (
+            <div className="mt-3 p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg space-y-2">
+              {definition && (
+                <p className="text-sm text-purple-900 dark:text-purple-200">
+                  <span className="font-semibold">📖 Definition:</span> {definition}
+                </p>
+              )}
+              {synonyms.length > 0 && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm font-semibold text-purple-900 dark:text-purple-200">🔗 Synonyms:</span>
+                  {synonyms.map((synonym) => (
+                    <button
+                      key={synonym}
+                      type="button"
+                      onClick={() => navigator.clipboard.writeText(synonym)}
+                      title="Click to copy"
+                      className="text-xs px-2 py-1 bg-purple-200 dark:bg-purple-800 text-purple-800 dark:text-purple-200 rounded-full hover:bg-purple-300 dark:hover:bg-purple-700 transition cursor-pointer"
+                    >
+                      {synonym}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Buttons */}
