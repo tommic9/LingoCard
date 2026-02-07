@@ -6,6 +6,7 @@ import { useState, useEffect, useRef } from 'react';
 import type { Card } from '../../types';
 import { useCardManagement } from '../../hooks/useCardManagement';
 import { translateEnglishToPolish } from '../../utils/translator';
+import { generateExample } from '../../utils/ai-generator';
 import { DuplicateWarning } from './DuplicateWarning';
 
 interface CardFormProps {
@@ -32,6 +33,7 @@ export function CardForm({ onCardCreated, onCancel, initialValues }: CardFormPro
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [translating, setTranslating] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [duplicateCard, setDuplicateCard] = useState<Card | null>(null);
   const [allowDuplicate, setAllowDuplicate] = useState(false);
 
@@ -84,6 +86,36 @@ export function CardForm({ onCardCreated, onCancel, initialValues }: CardFormPro
       setError('Translation failed. Please try again or enter manually.');
     } finally {
       setTranslating(false);
+    }
+  };
+
+  const handleGenerateExample = async () => {
+    if (!formData.front.trim()) {
+      setError('Please enter English text first');
+      return;
+    }
+
+    setGenerating(true);
+    setError(null);
+
+    try {
+      const result = await generateExample(
+        formData.front,
+        formData.back || undefined
+      );
+
+      if ('error' in result) {
+        setError(result.error);
+      } else {
+        setFormData((prev) => ({
+          ...prev,
+          example: result.example,
+        }));
+      }
+    } catch (err) {
+      setError('Failed to generate example. Please try again.');
+    } finally {
+      setGenerating(false);
     }
   };
 
@@ -258,9 +290,19 @@ export function CardForm({ onCardCreated, onCancel, initialValues }: CardFormPro
 
         {/* Example (Optional) */}
         <div>
-          <label htmlFor="example" className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-            Example (Optional)
-          </label>
+          <div className="flex items-center justify-between mb-2">
+            <label htmlFor="example" className="block text-sm font-semibold text-gray-900 dark:text-white">
+              Example (Optional)
+            </label>
+            <button
+              type="button"
+              onClick={handleGenerateExample}
+              disabled={loading || generating || !formData.front.trim()}
+              className="text-xs px-3 py-1 bg-accent-600 text-white rounded hover:bg-accent-700 transition disabled:opacity-50"
+            >
+              {generating ? 'Generating...' : '✨ Generate Example'}
+            </button>
+          </div>
           <textarea
             ref={exampleRef}
             id="example"
@@ -268,7 +310,7 @@ export function CardForm({ onCardCreated, onCancel, initialValues }: CardFormPro
             value={formData.example}
             onChange={handleInputChange}
             placeholder="e.g., Hello, how are you?"
-            disabled={loading}
+            disabled={loading || generating}
             rows={3}
             className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50 transition resize-none"
           />
@@ -281,7 +323,7 @@ export function CardForm({ onCardCreated, onCancel, initialValues }: CardFormPro
         <div className="flex gap-2 pt-4">
           <button
             type="submit"
-            disabled={loading || translating}
+            disabled={loading || translating || generating}
             className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition disabled:opacity-50 font-semibold"
           >
             {loading ? 'Adding...' : 'Add Card'}
