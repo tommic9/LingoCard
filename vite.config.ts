@@ -36,6 +36,13 @@ export default defineConfig({
             purpose: 'any maskable',
           },
         ],
+        share_target: {
+          action: 'https://lingocards.netlify.app/add',
+          method: 'GET',
+          params: {
+            text: 'text',
+          },
+        },
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],

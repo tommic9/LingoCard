@@ -14,16 +14,19 @@ export function AddCardPage() {
   const [activeTab, setActiveTab] = useState<TabType>('manual');
   const [message, setMessage] = useState('');
 
-  // Read initial values from query params (from extension)
-  const initialFront = searchParams.get('front') || undefined;
+  // Read initial values from query params (from extension or share target)
+  const sharedText = searchParams.get('text') || undefined; // From Android share
+  const initialFront = searchParams.get('front') || sharedText || undefined;
   const initialBack = searchParams.get('back') || undefined;
   const fromExtension = searchParams.get('source') === 'extension';
+  const fromShareTarget = !!sharedText && !fromExtension;
 
   // Debug: Log query params
   console.log('[AddCardPage] Query params:', {
     front: initialFront,
     back: initialBack,
-    source: fromExtension,
+    text: sharedText,
+    source: fromExtension ? 'extension' : fromShareTarget ? 'share-target' : 'manual',
     allParams: Object.fromEntries(searchParams.entries())
   });
 
@@ -37,8 +40,16 @@ export function AddCardPage() {
         // Clear query params
         setSearchParams({});
       }, 3000);
+    } else if (fromShareTarget && sharedText) {
+      // Show welcome message for share target users
+      setMessage('📱 Word shared from Android - translate and add!');
+      setTimeout(() => {
+        setMessage('');
+        // Clear query params
+        setSearchParams({});
+      }, 3000);
     }
-  }, [fromExtension, initialFront, initialBack, setSearchParams]);
+  }, [fromExtension, fromShareTarget, initialFront, initialBack, sharedText, setSearchParams]);
 
   const handleCardCreated = () => {
     setMessage('Card added successfully!');
