@@ -18,7 +18,7 @@
   ],
 
 "background": {
-  "service_worker": "background-chrome.js"
+  "service_worker": "chrome/background.js"
 },
 
   "action": {
