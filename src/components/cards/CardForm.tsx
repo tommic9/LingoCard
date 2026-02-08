@@ -8,6 +8,7 @@ import { useCardManagement } from '../../hooks/useCardManagement';
 import { translateEnglishToPolish } from '../../utils/translator';
 import { generateExample, generateDefinition } from '../../utils/ai-generator';
 import { DuplicateWarning } from './DuplicateWarning';
+import { SynonymActionModal } from './SynonymActionModal';
 
 interface CardFormProps {
   onCardCreated?: (card: Card) => void;
@@ -37,6 +38,7 @@ export function CardForm({ onCardCreated, onCancel, initialValues }: CardFormPro
   const [generatingDefinition, setGeneratingDefinition] = useState(false);
   const [definition, setDefinition] = useState<string | null>(null);
   const [synonyms, setSynonyms] = useState<string[]>([]);
+  const [selectedSynonym, setSelectedSynonym] = useState<string | null>(null);
   const [duplicateCard, setDuplicateCard] = useState<Card | null>(null);
   const [allowDuplicate, setAllowDuplicate] = useState(false);
 
@@ -156,6 +158,65 @@ export function CardForm({ onCardCreated, onCancel, initialValues }: CardFormPro
     } finally {
       setGeneratingDefinition(false);
     }
+  };
+
+  const handleSaveAndAddNew = async () => {
+    if (!selectedSynonym) return;
+
+    // Check if form is valid before saving
+    if (!validateForm()) {
+      setSelectedSynonym(null);
+      return;
+    }
+
+    // Create current card
+    setLoading(true);
+    setError(null);
+
+    try {
+      await createCard({
+        front: formData.front.trim(),
+        back: formData.back.trim(),
+        example: formData.example && formData.example.trim().length > 0 ? formData.example.trim() : undefined,
+        easeFactor: 2.5,
+        interval: 0,
+        repetitions: 0,
+        nextReviewDate: new Date(),
+      });
+
+      // Load synonym in fresh form
+      setFormData({ front: selectedSynonym, back: '', example: '' });
+      setDefinition(null);
+      setSynonyms([]);
+      setSelectedSynonym(null);
+      setAllowDuplicate(false);
+
+      setSuccess(true);
+      setTimeout(() => {
+        setSuccess(false);
+      }, 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create card');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReplace = () => {
+    if (!selectedSynonym) return;
+
+    // Replace current form with synonym
+    setFormData({ front: selectedSynonym, back: '', example: '' });
+    setDefinition(null);
+    setSynonyms([]);
+    setSelectedSynonym(null);
+  };
+
+  const handleCopy = () => {
+    if (!selectedSynonym) return;
+
+    navigator.clipboard.writeText(selectedSynonym);
+    setSelectedSynonym(null);
   };
 
   const validateForm = (): boolean => {
@@ -384,8 +445,8 @@ export function CardForm({ onCardCreated, onCancel, initialValues }: CardFormPro
                     <button
                       key={synonym}
                       type="button"
-                      onClick={() => navigator.clipboard.writeText(synonym)}
-                      title="Click to copy"
+                      onClick={() => setSelectedSynonym(synonym)}
+                      title="Click to add as new card"
                       className="text-xs px-2 py-1 bg-purple-200 dark:bg-purple-800 text-purple-800 dark:text-purple-200 rounded-full hover:bg-purple-300 dark:hover:bg-purple-700 transition cursor-pointer"
                     >
                       {synonym}
@@ -418,6 +479,19 @@ export function CardForm({ onCardCreated, onCancel, initialValues }: CardFormPro
           )}
         </div>
       </form>
+
+      {/* Synonym Action Modal */}
+      {selectedSynonym && (
+        <SynonymActionModal
+          synonym={selectedSynonym}
+          currentWord={formData.front}
+          isCurrentFormValid={formData.front.trim() !== '' && formData.back.trim() !== ''}
+          onSaveAndAddNew={handleSaveAndAddNew}
+          onReplace={handleReplace}
+          onCopy={handleCopy}
+          onClose={() => setSelectedSynonym(null)}
+        />
+      )}
     </div>
   );
 }
