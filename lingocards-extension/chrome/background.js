@@ -11,8 +11,8 @@ const NOTIFICATION_ID = 'lingocards-status';
 const SUPABASE_URL = 'https://qhnyqajcijojpuufxyrn.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFobnlxYWpjaWpvanB1dWZ4eXJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAzMTQyOTYsImV4cCI6MjA4NTg5MDI5Nn0.Eu2KX_yRkFqROZLUXg3Z012AG9eJk3Vk1EFXD_Q2vOw';
 
-// Import Supabase from CDN using importScripts
-importScripts('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js');
+// Import Supabase from local file using importScripts
+importScripts('../lib/supabase.umd.js');
 
 // Initialize Supabase client
 const { createClient } = supabase;
@@ -27,31 +27,42 @@ const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 // Storage utilities
 const storage = {
   async getSession() {
-    const result = await browser.storage.local.get('supabase_session');
-    return result.supabase_session || null;
+    const result = await browser.storage.local.get('lingocards_session');
+    return result.lingocards_session || null;
   },
 
   async setSession(session) {
-    await browser.storage.local.set({ supabase_session: session });
+    await browser.storage.local.set({ lingocards_session: session });
   },
 
   async clearSession() {
-    await browser.storage.local.remove('supabase_session');
+    await browser.storage.local.remove('lingocards_session');
   }
 };
 
 // Auth manager
 const authManager = {
   async getUser() {
+    console.log('[Auth] Getting user...');
     const session = await storage.getSession();
-    if (!session) return null;
+    console.log('[Auth] Session from storage:', session);
+
+    if (!session) {
+      console.log('[Auth] No session found');
+      return null;
+    }
 
     const expiresAt = session.expires_at * 1000;
+    console.log('[Auth] Session expires at:', new Date(expiresAt));
+    console.log('[Auth] Current time:', new Date(Date.now()));
+
     if (Date.now() > expiresAt) {
+      console.log('[Auth] Session expired');
       await this.signOut();
       return null;
     }
 
+    console.log('[Auth] User:', session.user);
     return session.user;
   },
 
@@ -116,7 +127,7 @@ const translator = {
 function showNotification(title, message) {
   browser.notifications.create(NOTIFICATION_ID, {
     type: 'basic',
-    iconUrl: 'icons/icon-48.png',
+    iconUrl: '../icons/icon-48.png',
     title: title,
     message: message,
     priority: 2
@@ -135,9 +146,13 @@ browser.runtime.onInstalled.addListener(() => {
 
 // Handle context menu click
 browser.contextMenus.onClicked.addListener(async (info, tab) => {
+  console.log('[Context Menu] Clicked!', info);
+
   if (info.menuItemId !== 'add-to-lingocards') return;
 
   const selectedText = info.selectionText?.trim();
+  console.log('[Context Menu] Selected text:', selectedText);
+
   if (!selectedText) {
     showNotification('Błąd', 'Nie zaznaczono tekstu');
     return;
@@ -145,6 +160,8 @@ browser.contextMenus.onClicked.addListener(async (info, tab) => {
 
   // Check authentication
   const user = await authManager.getUser();
+  console.log('[Context Menu] User:', user);
+
   if (!user) {
     showNotification('Wymagane logowanie', 'Zaloguj się w rozszerzeniu');
     return;
@@ -156,18 +173,21 @@ browser.contextMenus.onClicked.addListener(async (info, tab) => {
     const session = await authManager.getSession();
     if (!session) throw new Error('Sesja wygasła. Zaloguj się ponownie.');
 
+    console.log('[Context Menu] Translating...');
     const translation = await translator.translate(selectedText, 'en', 'pl');
+    console.log('[Context Menu] Translation:', translation);
 
     const appUrl = new URL('https://lingocards.netlify.app/add');
     appUrl.searchParams.set('front', selectedText);
     appUrl.searchParams.set('back', translation);
     appUrl.searchParams.set('source', 'extension');
 
+    console.log('[Context Menu] Opening URL:', appUrl.toString());
     await browser.tabs.create({ url: appUrl.toString() });
 
     showNotification('Gotowe!', `Przygotowano: "${selectedText}" → "${translation}"`);
   } catch (error) {
-    console.error('Error:', error);
+    console.error('[Context Menu] Error:', error);
     showNotification('Błąd', error.message || 'Spróbuj ponownie.');
   }
 });
